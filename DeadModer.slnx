@@ -1,7 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/DeadModer.Core/DeadModer.Core.csproj" />
-    <Project Path="src/DeadModer.Infrastructure/DeadModer.Infrastructure.csproj" />
-    <Project Path="src/DeadModer.UI/DeadModer.UI.csproj" />
-  </Folder>
-</Solution>
