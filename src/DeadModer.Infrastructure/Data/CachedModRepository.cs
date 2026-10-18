@@ -45,11 +45,28 @@ public sealed class CachedModRepository : ICachedModRepository
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Collection
+            var allPopular = Collection
                 .Query()
                 .OrderByDescending(x => x.DownloadCount)
                 .Limit(limit)
                 .ToList();
+
+            // Если среди топ-популярных нет модов Deadlocker, но они есть в базе, подмешиваем их
+            if (!allPopular.Any(x => x.SourceSite == "Deadlocker" || x.Id.StartsWith("dl_")))
+            {
+                var dlPopular = Collection
+                    .Find(x => x.SourceSite == "Deadlocker" || x.Id.StartsWith("dl_"))
+                    .OrderByDescending(x => x.DownloadCount)
+                    .Take(Math.Min(30, Math.Max(5, limit / 4)))
+                    .ToList();
+
+                if (dlPopular.Count > 0)
+                {
+                    allPopular.AddRange(dlPopular);
+                }
+            }
+
+            return (IReadOnlyList<CachedModInfo>)allPopular;
         }, cancellationToken);
     }
 
@@ -60,10 +77,53 @@ public sealed class CachedModRepository : ICachedModRepository
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Collection
+            var allRecent = Collection
                 .Query()
                 .OrderByDescending(x => x.PublishedDate)
                 .Limit(limit)
+                .ToList();
+
+            // Гарантируем наличие модов с обоих поддерживаемых сайтов
+            var hasDl = allRecent.Any(x => x.SourceSite == "Deadlocker" || x.Id.StartsWith("dl_"));
+            var hasGb = allRecent.Any(x => x.SourceSite == "GameBanana" || x.Id.StartsWith("gb_"));
+
+            if (!hasDl)
+            {
+                var dlRecent = Collection
+                    .Find(x => x.SourceSite == "Deadlocker" || x.Id.StartsWith("dl_"))
+                    .OrderByDescending(x => x.PublishedDate)
+                    .Take(Math.Min(60, Math.Max(10, limit / 3)))
+                    .ToList();
+                allRecent.AddRange(dlRecent);
+            }
+
+            if (!hasGb)
+            {
+                var gbRecent = Collection
+                    .Find(x => x.SourceSite == "GameBanana" || x.Id.StartsWith("gb_"))
+                    .OrderByDescending(x => x.PublishedDate)
+                    .Take(Math.Min(60, Math.Max(10, limit / 3)))
+                    .ToList();
+                allRecent.AddRange(gbRecent);
+            }
+
+            return (IReadOnlyList<CachedModInfo>)allRecent;
+        }, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<CachedModInfo>> GetBySiteAsync(string site, int limit = 100, CancellationToken cancellationToken = default)
+    {
+        return Task.Run<IReadOnlyList<CachedModInfo>>(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var isDl = site.Equals("Deadlocker", StringComparison.OrdinalIgnoreCase);
+            return (IReadOnlyList<CachedModInfo>)Collection
+                .Find(x => isDl
+                    ? (x.SourceSite == "Deadlocker" || x.Id.StartsWith("dl_"))
+                    : (x.SourceSite == "GameBanana" || x.Id.StartsWith("gb_") || x.Id.StartsWith("gb-")))
+                .OrderByDescending(x => x.DownloadCount)
+                .Take(limit)
                 .ToList();
         }, cancellationToken);
     }

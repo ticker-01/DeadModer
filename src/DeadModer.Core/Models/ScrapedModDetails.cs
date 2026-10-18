@@ -21,6 +21,9 @@ public class ScrapedModDetails
     public double Rating { get; set; } = 4.8;
     public int DownloadCount { get; set; } = 0;
     public long FileSizeBytes { get; set; } = 12 * 1024 * 1024;
+    public bool IsNsfw { get; set; } = false;
+    public bool IsFeatured { get; set; } = false;
+    public System.DateTime? CreatedAt { get; set; }
     public List<string> Tags { get; set; } = [];
     public List<string> Screenshots { get; set; } = [];
 }

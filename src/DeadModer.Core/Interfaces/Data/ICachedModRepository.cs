@@ -32,6 +32,11 @@ public interface ICachedModRepository
     Task<IReadOnlyList<CachedModInfo>> GetByCategoryAsync(ModCategory category, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Получить закэшированные моды определенного источника ("GameBanana", "Deadlocker").
+    /// </summary>
+    Task<IReadOnlyList<CachedModInfo>> GetBySiteAsync(string site, int limit = 100, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Найти закэшированный мод по первичному ключу.
     /// </summary>
     Task<CachedModInfo?> GetByIdAsync(string id, CancellationToken cancellationToken = default);

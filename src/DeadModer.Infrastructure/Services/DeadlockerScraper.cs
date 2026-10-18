@@ -46,7 +46,7 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
     /// <inheritdoc />
     public async Task<IReadOnlyList<ScrapedModDetails>> FetchDeadlockerModsAsync(int page = 1, int limit = 40, CancellationToken cancellationToken = default)
     {
-        var endpoint = $"https://deadlocker.net/api/v1/mods?page={page}&limit={limit}";
+        var endpoint = $"https://deadlocker.net/api/v1/mods?page={page}&limit={limit}&nsfw=true";
         _logger?.LogInformation("Автоматический запрос модов с Deadlocker API: {Endpoint}", endpoint);
 
         try
@@ -78,6 +78,25 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 var category = el.TryGetProperty("gb_category", out var catProp) ? catProp.GetString() ?? "Skins" : "Skins";
                 var downloads = el.TryGetProperty("downloads", out var dlProp) && dlProp.TryGetInt32(out var dlVal) ? dlVal : 0;
                 var gbDownloads = el.TryGetProperty("gb_downloads", out var gbdlProp) && gbdlProp.TryGetInt32(out var gbdlVal) ? gbdlVal : 0;
+                var isNsfw = el.TryGetProperty("is_nsfw", out var nsfwProp) &&
+                    (nsfwProp.ValueKind == JsonValueKind.True || (nsfwProp.ValueKind == JsonValueKind.Number && nsfwProp.GetInt32() == 1));
+                var isFeatured = el.TryGetProperty("is_featured", out var featProp) &&
+                    (featProp.ValueKind == JsonValueKind.True || (featProp.ValueKind == JsonValueKind.Number && featProp.GetInt32() == 1));
+
+                DateTime? createdAt = null;
+                if (el.TryGetProperty("created_at", out var createdProp) &&
+                    DateTime.TryParse(createdProp.GetString(), out var dt))
+                {
+                    createdAt = dt.ToUniversalTime();
+                }
+                else if (el.TryGetProperty("gb_updated_at", out var gbUpdProp) &&
+                    DateTime.TryParse(gbUpdProp.GetString(), out var dtUpd))
+                {
+                    createdAt = dtUpd.ToUniversalTime();
+                }
+
+                var maxDl = Math.Max(downloads, gbDownloads);
+                var effectiveDownloads = maxDl > 0 ? maxDl : 350;
 
                 // Извлекаем автора из описания (например, "Yamato by Kirill Senzu")
                 var author = "Deadlock Modder";
@@ -97,8 +116,11 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                     PreviewImageUrl = mainImage,
                     HeroName = charName,
                     Category = category,
-                    DownloadCount = downloads > 0 ? downloads : gbDownloads,
+                    DownloadCount = effectiveDownloads,
                     Rating = 4.8,
+                    IsNsfw = isNsfw,
+                    IsFeatured = isFeatured,
+                    CreatedAt = createdAt,
                     SourceUrl = $"https://deadlocker.net/mods/{modId}",
                     Tags = [category, charName ?? "Deadlock"]
                 };
@@ -140,6 +162,32 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
             var rating = modEl.TryGetProperty("rating", out var rateProp) && rateProp.TryGetDouble(out var rVal) ? rVal : 4.8;
             var downloads = modEl.TryGetProperty("downloads", out var downProp) && downProp.TryGetInt32(out var dVal) ? dVal : 1200;
 
+            var isNsfw = modEl.TryGetProperty("is_nsfw", out var nsfwProp) &&
+                (nsfwProp.ValueKind == JsonValueKind.True || (nsfwProp.ValueKind == JsonValueKind.Number && nsfwProp.GetInt32() == 1));
+            var isFeatured = modEl.TryGetProperty("is_featured", out var featProp) &&
+                (featProp.ValueKind == JsonValueKind.True || (featProp.ValueKind == JsonValueKind.Number && featProp.GetInt32() == 1));
+
+            // Если прямой download_url не указан в ответе, проверяем gamebanana_id или mod_link
+            if (string.IsNullOrWhiteSpace(downloadUrl))
+            {
+                if (modEl.TryGetProperty("gamebanana_id", out var gbIdProp) && gbIdProp.TryGetInt64(out var gbIdVal) && gbIdVal > 0)
+                {
+                    downloadUrl = $"https://gamebanana.com/dl/{gbIdVal}";
+                }
+                else if (modEl.TryGetProperty("mod_link", out var linkProp))
+                {
+                    var link = linkProp.GetString() ?? "";
+                    if (link.Contains("gamebanana.com/mods/"))
+                    {
+                        var parts = link.Split("/mods/");
+                        if (parts.Length > 1 && long.TryParse(parts[1].Split('?')[0].Trim('/'), out var parsedGbId))
+                        {
+                            downloadUrl = $"https://gamebanana.com/dl/{parsedGbId}";
+                        }
+                    }
+                }
+            }
+
             var screenshots = new List<string>();
             if (!string.IsNullOrEmpty(mainImage)) screenshots.Add(mainImage);
 
@@ -148,7 +196,7 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 foreach (var img in addImgs.EnumerateArray())
                 {
                     var url = img.GetString();
-                    if (!string.IsNullOrEmpty(url)) screenshots.Add(url);
+                    if (!string.IsNullOrEmpty(url) && !screenshots.Contains(url)) screenshots.Add(url);
                 }
             }
 
@@ -162,6 +210,8 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 HeroName = charName,
                 Rating = rating,
                 DownloadCount = downloads,
+                IsNsfw = isNsfw,
+                IsFeatured = isFeatured,
                 Screenshots = screenshots
             };
         }

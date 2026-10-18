@@ -199,6 +199,11 @@ public partial class ModCatalogViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsSiteDeadlocker));
         OnPropertyChanged(nameof(HasActiveFilters));
         ApplyFilter();
+
+        if (value == ModSiteSource.Deadlocker)
+        {
+            _ = EnsureDeadlockerModsLoadedAsync();
+        }
     }
 
     partial void OnTimePeriodChanged(ModTimePeriod value)
@@ -448,19 +453,23 @@ public partial class ModCatalogViewModel : ViewModelBase
                     var defaultModsTask2 = _gameBananaClient.GetDeadlockModsAsync(page: 2, perPage: 25, sort: "default", cancellationToken);
                     var newModsTask = _gameBananaClient.GetDeadlockModsAsync(page: 1, perPage: 25, sort: "new", cancellationToken);
                     var dlTask1 = _deadlockerScraper != null
-                        ? _deadlockerScraper.FetchDeadlockerModsAsync(page: 1, limit: 30, cancellationToken)
+                        ? _deadlockerScraper.FetchDeadlockerModsAsync(page: 1, limit: 40, cancellationToken)
                         : Task.FromResult<IReadOnlyList<DeadModer.Core.Models.ScrapedModDetails>>([]);
                     var dlTask2 = _deadlockerScraper != null
-                        ? _deadlockerScraper.FetchDeadlockerModsAsync(page: 2, limit: 30, cancellationToken)
+                        ? _deadlockerScraper.FetchDeadlockerModsAsync(page: 2, limit: 40, cancellationToken)
+                        : Task.FromResult<IReadOnlyList<DeadModer.Core.Models.ScrapedModDetails>>([]);
+                    var dlTask3 = _deadlockerScraper != null
+                        ? _deadlockerScraper.FetchDeadlockerModsAsync(page: 3, limit: 40, cancellationToken)
                         : Task.FromResult<IReadOnlyList<DeadModer.Core.Models.ScrapedModDetails>>([]);
 
-                    await Task.WhenAll(defaultModsTask1, defaultModsTask2, newModsTask, dlTask1, dlTask2);
+                    await Task.WhenAll(defaultModsTask1, defaultModsTask2, newModsTask, dlTask1, dlTask2, dlTask3);
 
                     var remoteDefault1 = await defaultModsTask1;
                     var remoteDefault2 = await defaultModsTask2;
                     var remoteNew = await newModsTask;
                     var remoteDeadlocker1 = await dlTask1;
                     var remoteDeadlocker2 = await dlTask2;
+                    var remoteDeadlocker3 = await dlTask3;
 
                     // Объединяем результаты GameBanana
                     var allFetched = remoteDefault1.Concat(remoteDefault2).Concat(remoteNew)
@@ -506,7 +515,7 @@ public partial class ModCatalogViewModel : ViewModelBase
                     }
 
                     // Добавляем спарсенные моды из Deadlocker.net
-                    var allDl = remoteDeadlocker1.Concat(remoteDeadlocker2)
+                    var allDl = remoteDeadlocker1.Concat(remoteDeadlocker2).Concat(remoteDeadlocker3)
                         .GroupBy(m => m.ModId)
                         .Select(g => g.First())
                         .ToList();
@@ -529,14 +538,14 @@ public partial class ModCatalogViewModel : ViewModelBase
                                 Category = category,
                                 TargetHero = hero ?? dl.HeroName,
                                 DownloadCount = dl.DownloadCount,
-                                Rating = 5.0,
+                                Rating = dl.Rating > 0 ? dl.Rating : 5.0,
                                 DownloadUrl = dl.DownloadUrl ?? string.Empty,
                                 PreviewImageUrl = dl.PreviewImageUrl ?? string.Empty,
                                 FileSizeBytes = dl.FileSizeBytes > 0 ? dl.FileSizeBytes : 15_000_000,
-                                PublishedDate = DateTime.UtcNow,
-                                IsFeatured = dl.DownloadCount > 300,
-                                HasFiles = !string.IsNullOrEmpty(dl.DownloadUrl),
-                                IsNsfw = false,
+                                PublishedDate = dl.CreatedAt ?? DateTime.UtcNow,
+                                IsFeatured = dl.IsFeatured || dl.DownloadCount > 1000,
+                                HasFiles = true,
+                                IsNsfw = dl.IsNsfw,
                                 SourceSite = "Deadlocker",
                                 Tags = ["Deadlocker", category.ToString()],
                                 CachedAt = DateTime.UtcNow
@@ -917,9 +926,15 @@ public partial class ModCatalogViewModel : ViewModelBase
                 return false;
 
             // 4. Эксклюзивный фильтр: Источник (GameBanana / Deadlocker)
-            if (SiteFilter == ModSiteSource.GameBanana && !card.SourceSite.Equals("GameBanana", StringComparison.OrdinalIgnoreCase) && !card.Id.StartsWith("gb_"))
+            if (SiteFilter == ModSiteSource.GameBanana &&
+                !card.SourceSite.Equals("GameBanana", StringComparison.OrdinalIgnoreCase) &&
+                !card.Id.StartsWith("gb_", StringComparison.OrdinalIgnoreCase) &&
+                !card.Id.StartsWith("gb-", StringComparison.OrdinalIgnoreCase))
                 return false;
-            if (SiteFilter == ModSiteSource.Deadlocker && !card.SourceSite.Equals("Deadlocker", StringComparison.OrdinalIgnoreCase) && !card.Id.StartsWith("dl_"))
+
+            if (SiteFilter == ModSiteSource.Deadlocker &&
+                !card.SourceSite.Equals("Deadlocker", StringComparison.OrdinalIgnoreCase) &&
+                !card.Id.StartsWith("dl_", StringComparison.OrdinalIgnoreCase))
                 return false;
 
             // 5. Эксклюзивный фильтр: Период публикации
@@ -948,7 +963,7 @@ public partial class ModCatalogViewModel : ViewModelBase
                 return false;
 
             // 8. Эксклюзивный фильтр: Готовы к установке (VPK / HasFiles)
-            if (OnlyReadyToInstall && (!card.HasFiles || string.IsNullOrEmpty(card.DownloadUrl)))
+            if (OnlyReadyToInstall && (!card.HasFiles || (string.IsNullOrEmpty(card.DownloadUrl) && !card.Id.StartsWith("dl_") && !card.Id.StartsWith("gb_"))))
                 return false;
 
             // 9. Полнотекстовый токенизированный поиск (все слова из запроса должны совпасть)
@@ -1027,7 +1042,8 @@ public partial class ModCatalogViewModel : ViewModelBase
                 _fileSystemService,
                 _localModRepository,
                 _gameBananaClient,
-                selected => SelectedModCard = selected);
+                selected => SelectedModCard = selected,
+                _deadlockerScraper);
 
             card.OnOpenDetail = OpenModDetail;
             target.Add(card);
@@ -1136,6 +1152,56 @@ public partial class ModCatalogViewModel : ViewModelBase
                     {
                         // Игнорируем сетевые сбои отдельных скриншотов
                     }
+                }
+            });
+        }
+
+        // Если это мод с Deadlocker, асинхронно запрашиваем полные детали и скриншоты с API
+        if (mod.Id.StartsWith("dl_") && _deadlockerScraper != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var rawId = mod.Id.StartsWith("dl_") ? mod.Id[3..] : mod.Id;
+                    var details = await _deadlockerScraper.GetDeadlockerModDetailsAsync(rawId);
+                    if (details != null)
+                    {
+                        if (string.IsNullOrEmpty(mod.DownloadUrl) && !string.IsNullOrEmpty(details.DownloadUrl))
+                        {
+                            mod.DownloadUrl = details.DownloadUrl;
+                        }
+
+                        if (details.Screenshots.Count > 0)
+                        {
+                            foreach (var scUrl in details.Screenshots)
+                            {
+                                if (!mod.Screenshots.Contains(scUrl))
+                                {
+                                    await Dispatcher.UIThread.InvokeAsync(() => mod.Screenshots.Add(scUrl));
+                                    try
+                                    {
+                                        var bmp = await DeadModer.UI.Services.ImageCacheService.LoadBitmapAsync(scUrl);
+                                        if (bmp != null)
+                                        {
+                                            await Dispatcher.UIThread.InvokeAsync(() =>
+                                            {
+                                                if (!DetailedScreenshots.Contains(bmp))
+                                                {
+                                                    DetailedScreenshots.Add(bmp);
+                                                }
+                                            });
+                                        }
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Ошибка подгрузки деталей Deadlocker для мода {Id}", mod.Id);
                 }
             });
         }
@@ -1364,14 +1430,14 @@ public partial class ModCatalogViewModel : ViewModelBase
                     Category = category,
                     TargetHero = hero ?? dl.HeroName,
                     DownloadCount = dl.DownloadCount,
-                    Rating = 5.0,
+                    Rating = dl.Rating > 0 ? dl.Rating : 5.0,
                     DownloadUrl = dl.DownloadUrl ?? string.Empty,
                     PreviewImageUrl = dl.PreviewImageUrl ?? string.Empty,
                     FileSizeBytes = dl.FileSizeBytes > 0 ? dl.FileSizeBytes : 15_000_000,
-                    PublishedDate = DateTime.UtcNow,
-                    IsFeatured = dl.DownloadCount > 300,
-                    HasFiles = !string.IsNullOrEmpty(dl.DownloadUrl),
-                    IsNsfw = false,
+                    PublishedDate = dl.CreatedAt ?? DateTime.UtcNow,
+                    IsFeatured = dl.IsFeatured || dl.DownloadCount > 1000,
+                    HasFiles = true,
+                    IsNsfw = dl.IsNsfw,
                     SourceSite = "Deadlocker",
                     Tags = ["Deadlocker", category.ToString()],
                     CachedAt = DateTime.UtcNow
@@ -1403,7 +1469,8 @@ public partial class ModCatalogViewModel : ViewModelBase
                                 _fileSystemService,
                                 _localModRepository,
                                 _gameBananaClient,
-                                selected => SelectedModCard = selected);
+                                selected => SelectedModCard = selected,
+                                _deadlockerScraper);
                             card.OnOpenDetail = OpenModDetail;
                             RecentMods.Add(card);
                         }
@@ -1420,6 +1487,139 @@ public partial class ModCatalogViewModel : ViewModelBase
         finally
         {
             IsLoadingMore = false;
+        }
+    }
+
+    /// <summary>
+    /// Гарантирует немедленную загрузку и отображение модов Deadlocker.net при выборе фильтра сайта.
+    /// </summary>
+    public async Task EnsureDeadlockerModsLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // 1. Проверяем наличие модов Deadlocker в локальной базе LiteDB
+            var dlCached = await _cachedModRepository.GetBySiteAsync("Deadlocker", 200, cancellationToken);
+            var installedMods = await _localModRepository.GetAllAsync(cancellationToken);
+            var installedIds = new HashSet<string>(
+                installedMods.Select(m => m.Id)
+                    .Concat(installedMods.Where(m => !string.IsNullOrEmpty(m.RemoteModId)).Select(m => m.RemoteModId!)),
+                StringComparer.OrdinalIgnoreCase);
+
+            if (dlCached.Count > 0)
+            {
+                var existingRecentIds = new HashSet<string>(RecentMods.Select(m => m.Id), StringComparer.OrdinalIgnoreCase);
+                var existingPopularIds = new HashSet<string>(PopularMods.Select(m => m.Id), StringComparer.OrdinalIgnoreCase);
+
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    foreach (var mod in dlCached)
+                    {
+                        if (existingRecentIds.Add(mod.Id))
+                        {
+                            var card = ModCardViewModel.FromCachedMod(
+                                mod,
+                                installedIds.Contains(mod.Id),
+                                _downloadService,
+                                _fileSystemService,
+                                _localModRepository,
+                                _gameBananaClient,
+                                selected => SelectedModCard = selected,
+                                _deadlockerScraper);
+                            card.OnOpenDetail = OpenModDetail;
+                            RecentMods.Add(card);
+                        }
+
+                        if (existingPopularIds.Count < 50 && existingPopularIds.Add(mod.Id))
+                        {
+                            var card = ModCardViewModel.FromCachedMod(
+                                mod,
+                                installedIds.Contains(mod.Id),
+                                _downloadService,
+                                _fileSystemService,
+                                _localModRepository,
+                                _gameBananaClient,
+                                selected => SelectedModCard = selected,
+                                _deadlockerScraper);
+                            card.OnOpenDetail = OpenModDetail;
+                            PopularMods.Add(card);
+                        }
+                    }
+
+                    TotalLoadedModsCount = RecentMods.Count;
+                    ApplyFilter();
+                });
+            }
+
+            // 2. Если в базе еще мало модов Deadlocker или требуется свежая порция, запрашиваем с API
+            if (_deadlockerScraper != null && dlCached.Count < 50)
+            {
+                var remote1 = await _deadlockerScraper.FetchDeadlockerModsAsync(page: 1, limit: 40, cancellationToken);
+                var remote2 = await _deadlockerScraper.FetchDeadlockerModsAsync(page: 2, limit: 40, cancellationToken);
+                var combined = remote1.Concat(remote2).GroupBy(m => m.ModId).Select(g => g.First()).ToList();
+
+                var newCached = new List<CachedModInfo>();
+                foreach (var dl in combined)
+                {
+                    if (string.IsNullOrWhiteSpace(dl.ModId)) continue;
+                    var (category, hero) = MapDeadlockerCategory(dl);
+                    newCached.Add(new CachedModInfo
+                    {
+                        Id = $"dl_{dl.ModId}",
+                        Name = dl.Title,
+                        ShortDescription = !string.IsNullOrWhiteSpace(dl.Description) ? dl.Description : dl.Title,
+                        FullDescription = dl.Description,
+                        Author = dl.Author,
+                        Version = dl.Version,
+                        Category = category,
+                        TargetHero = hero ?? dl.HeroName,
+                        DownloadCount = dl.DownloadCount,
+                        Rating = dl.Rating > 0 ? dl.Rating : 5.0,
+                        DownloadUrl = dl.DownloadUrl ?? string.Empty,
+                        PreviewImageUrl = dl.PreviewImageUrl ?? string.Empty,
+                        FileSizeBytes = dl.FileSizeBytes > 0 ? dl.FileSizeBytes : 15_000_000,
+                        PublishedDate = dl.CreatedAt ?? DateTime.UtcNow,
+                        IsFeatured = dl.IsFeatured || dl.DownloadCount > 1000,
+                        HasFiles = true,
+                        IsNsfw = dl.IsNsfw,
+                        SourceSite = "Deadlocker",
+                        Tags = ["Deadlocker", category.ToString()],
+                        CachedAt = DateTime.UtcNow
+                    });
+                }
+
+                if (newCached.Count > 0)
+                {
+                    await _cachedModRepository.UpsertRangeAsync(newCached, cancellationToken);
+
+                    var existingRecentIds = new HashSet<string>(RecentMods.Select(m => m.Id), StringComparer.OrdinalIgnoreCase);
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        foreach (var mod in newCached)
+                        {
+                            if (existingRecentIds.Add(mod.Id))
+                            {
+                                var card = ModCardViewModel.FromCachedMod(
+                                    mod,
+                                    installedIds.Contains(mod.Id),
+                                    _downloadService,
+                                    _fileSystemService,
+                                    _localModRepository,
+                                    _gameBananaClient,
+                                    selected => SelectedModCard = selected,
+                                    _deadlockerScraper);
+                                card.OnOpenDetail = OpenModDetail;
+                                RecentMods.Add(card);
+                            }
+                        }
+                        TotalLoadedModsCount = RecentMods.Count;
+                        ApplyFilter();
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Ошибка гарантированной загрузки модов Deadlocker");
         }
     }
 }

@@ -142,6 +142,8 @@ public partial class ModCardViewModel : ViewModelBase
 
     public Action<ModCardViewModel>? OnOpenDetail { get; set; }
 
+    public IDeadlockerScraper? DeadlockerScraper { get; set; }
+
     public static ModCardViewModel FromCachedMod(
         CachedModInfo cached,
         bool isInstalled,
@@ -149,8 +151,15 @@ public partial class ModCardViewModel : ViewModelBase
         IFileSystemService fileSystemService,
         ILocalModRepository modRepository,
         IGameBananaClient? gameBananaClient = null,
-        Action<ModCardViewModel>? onSelected = null)
+        Action<ModCardViewModel>? onSelected = null,
+        IDeadlockerScraper? deadlockerScraper = null)
     {
+        var site = !string.IsNullOrWhiteSpace(cached.SourceSite)
+            ? cached.SourceSite
+            : (cached.Id.StartsWith("dl_") ? "Deadlocker" : "GameBanana");
+
+        var hasFiles = cached.HasFiles || cached.Id.StartsWith("dl_") || !string.IsNullOrEmpty(cached.DownloadUrl);
+
         var vm = new ModCardViewModel(downloadService, fileSystemService, modRepository, gameBananaClient, onSelected)
         {
             Id = cached.Id,
@@ -170,11 +179,12 @@ public partial class ModCardViewModel : ViewModelBase
             DateFormatted = cached.PublishedDate.ToString("dd.MM.yyyy"),
             PublishedDate = cached.PublishedDate,
             IsFeatured = cached.IsFeatured,
-            HasFiles = cached.HasFiles,
+            HasFiles = hasFiles,
             IsNsfw = cached.IsNsfw,
-            SourceSite = cached.SourceSite,
+            SourceSite = site,
             IsInstalled = isInstalled,
-            IsEnabled = isInstalled
+            IsEnabled = isInstalled,
+            DeadlockerScraper = deadlockerScraper
         };
 
         // Теги
@@ -324,12 +334,24 @@ public partial class ModCardViewModel : ViewModelBase
         }
 
         // Если ссылка еще не была получена заранее, запрашиваем ее автоматически через GameBanana API
-        if (string.IsNullOrWhiteSpace(DownloadUrl) && _gameBananaClient != null)
+        if (string.IsNullOrWhiteSpace(DownloadUrl) && _gameBananaClient != null && (Id.StartsWith("gb_") || Id.StartsWith("gb-")))
         {
             ActionButtonText = Loc["Btn_Downloading"];
             if (long.TryParse(Id.Replace("gb_", "").Replace("gb-", ""), out var gbId))
             {
                 DownloadUrl = await _gameBananaClient.GetDownloadUrlAsync(gbId, cancellationToken) ?? string.Empty;
+            }
+        }
+
+        // Если ссылка Deadlocker еще не была получена, запрашиваем детали мода с Deadlocker API
+        if (string.IsNullOrWhiteSpace(DownloadUrl) && DeadlockerScraper != null && Id.StartsWith("dl_"))
+        {
+            ActionButtonText = Loc["Btn_Downloading"];
+            var rawId = Id.StartsWith("dl_") ? Id[3..] : Id;
+            var details = await DeadlockerScraper.GetDeadlockerModDetailsAsync(rawId, cancellationToken);
+            if (details != null && !string.IsNullOrWhiteSpace(details.DownloadUrl))
+            {
+                DownloadUrl = details.DownloadUrl;
             }
         }
 
