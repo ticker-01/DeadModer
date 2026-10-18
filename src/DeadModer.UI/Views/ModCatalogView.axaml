@@ -147,36 +147,36 @@
                 <!-- 2.0 БЫСТРЫЕ ЭКСКЛЮЗИВНЫЕ ФИЛЬТРЫ (ЧИПЫ В СТИЛЕ САЙТОВ МОДОВ) -->
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <!-- ★ Выбор редакции -->
+                        <!-- Выбор редакции -->
                         <Button Classes="pillFilter" Classes.active="{Binding OnlyFeatured}"
                                 Command="{Binding ToggleOnlyFeaturedCommand}"
                                 Cursor="Hand"
                                 ToolTip.Tip="Только проверенные моды с высоким качеством и выбором редакции GameBanana / Deadlocker">
                             <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource IconStar}" Width="11" Height="11" Foreground="#F59E0B" VerticalAlignment="Center" />
-                                <TextBlock Text="★ Выбор редакции" VerticalAlignment="Center" />
+                                <PathIcon Data="{StaticResource IconStar}" Width="11" Height="11" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Выбор редакции" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
-                        <!-- ⚡ Готовы к установке -->
+                        <!-- Готовы к установке -->
                         <Button Classes="pillFilter" Classes.active="{Binding OnlyReadyToInstall}"
                                 Command="{Binding ToggleOnlyReadyToInstallCommand}"
                                 Cursor="Hand"
                                 ToolTip.Tip="Модификации со встроенными файлами VPK, готовые к установке в 1 клик">
                             <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource IconBolt}" Width="11" Height="11" Foreground="#38BDF8" VerticalAlignment="Center" />
-                                <TextBlock Text="⚡ Готовы к установке" VerticalAlignment="Center" />
+                                <PathIcon Data="{StaticResource IconBolt}" Width="11" Height="11" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Готовы к установке" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
-                        <!-- 🛡️ Только SFW -->
+                        <!-- Только SFW -->
                         <Button Classes="pillFilter" Classes.active="{Binding IsNsfwSfwOnly}"
                                 Command="{Binding SetNsfwFilterCommand}" CommandParameter="SfwOnly"
                                 Cursor="Hand"
                                 ToolTip.Tip="Скрыть моды с возрастным ограничением 18+ (NSFW)">
                             <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource IconShield}" Width="11" Height="11" Foreground="#34D399" VerticalAlignment="Center" />
-                                <TextBlock Text="🛡️ Только SFW" VerticalAlignment="Center" />
+                                <PathIcon Data="{StaticResource IconShield}" Width="11" Height="11" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Только SFW" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
@@ -195,7 +195,7 @@
                                 Command="{Binding SetSiteFilterCommand}" CommandParameter="GameBanana"
                                 Cursor="Hand"
                                 ToolTip.Tip="Показать только модификации с GameBanana.com">
-                            <TextBlock Text="🍌 GameBanana" VerticalAlignment="Center" />
+                            <TextBlock Text="GameBanana" VerticalAlignment="Center" />
                         </Button>
 
                         <!-- Источник: Deadlocker -->
@@ -203,7 +203,7 @@
                                 Command="{Binding SetSiteFilterCommand}" CommandParameter="Deadlocker"
                                 Cursor="Hand"
                                 ToolTip.Tip="Показать только модификации с Deadlocker.net">
-                            <TextBlock Text="🔷 Deadlocker" VerticalAlignment="Center" />
+                            <TextBlock Text="Deadlocker" VerticalAlignment="Center" />
                         </Button>
 
                         <!-- Разделитель -->
@@ -253,25 +253,25 @@
                             <TextBlock Text="Сортировка:" FontSize="11" FontWeight="SemiBold" Foreground="#858EA0" VerticalAlignment="Center" Width="130" />
                             <Button Classes="pillFilter" Classes.active="{Binding IsSortPopularity}" Command="{Binding SetSortOrderCommand}" CommandParameter="Popularity">
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                    <PathIcon Data="{StaticResource IconFlame}" Width="10" Height="10" Foreground="#F59E0B" VerticalAlignment="Center" />
+                                    <PathIcon Data="{StaticResource IconFlame}" Width="10" Height="10" Foreground="#FFFFFF" VerticalAlignment="Center" />
                                     <TextBlock Text="Популярные" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Classes="pillFilter" Classes.active="{Binding IsSortNewest}" Command="{Binding SetSortOrderCommand}" CommandParameter="Newest">
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                    <PathIcon Data="{StaticResource IconRefresh}" Width="10" Height="10" Foreground="#38BDF8" VerticalAlignment="Center" />
+                                    <PathIcon Data="{StaticResource IconRefresh}" Width="10" Height="10" Foreground="#FFFFFF" VerticalAlignment="Center" />
                                     <TextBlock Text="Новинки" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Classes="pillFilter" Classes.active="{Binding IsSortRating}" Command="{Binding SetSortOrderCommand}" CommandParameter="Rating">
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                    <PathIcon Data="{StaticResource IconStar}" Width="10" Height="10" Foreground="#FACC15" VerticalAlignment="Center" />
-                                    <TextBlock Text="По рейтингу ★" VerticalAlignment="Center" />
+                                    <PathIcon Data="{StaticResource IconStar}" Width="10" Height="10" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Text="По рейтингу" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Classes="pillFilter" Classes.active="{Binding IsSortDownloads}" Command="{Binding SetSortOrderCommand}" CommandParameter="Downloads">
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                    <PathIcon Data="{StaticResource IconDownloadMini}" Width="10" Height="10" Foreground="#A78BFA" VerticalAlignment="Center" />
+                                    <PathIcon Data="{StaticResource IconDownloadMini}" Width="10" Height="10" Foreground="#FFFFFF" VerticalAlignment="Center" />
                                     <TextBlock Text="По скачиваниям" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
@@ -467,7 +467,7 @@
                                                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                                     <Border Background="#E03D2E0B" BorderBrush="#785315" BorderThickness="1" CornerRadius="3" Padding="4,1" IsVisible="{Binding IsFeatured}" VerticalAlignment="Center">
-                                                        <TextBlock Text="★ Топ" FontSize="8" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center" />
+                                                        <TextBlock Text="Топ" FontSize="8" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center" />
                                                     </Border>
                                                     <Border Background="#E0421212" BorderBrush="#7F1D1D" BorderThickness="1" CornerRadius="3" Padding="4,1" IsVisible="{Binding IsNsfw}" VerticalAlignment="Center">
                                                         <TextBlock Text="18+" FontSize="8" FontWeight="Bold" Foreground="#EF4444" VerticalAlignment="Center" />

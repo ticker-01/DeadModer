@@ -70,7 +70,7 @@
                                         CornerRadius="4" Padding="4,2"
                                         IsVisible="{Binding IsFeatured}"
                                         ToolTip.Tip="Выбор редакции">
-                                    <TextBlock Text="★ Топ" FontSize="8" FontWeight="Bold" Foreground="#FBBF24" />
+                                    <TextBlock Text="Топ" FontSize="8" FontWeight="Bold" Foreground="#FBBF24" />
                                 </Border>
 
                                 <!-- Бейдж 18+ (NSFW) -->
