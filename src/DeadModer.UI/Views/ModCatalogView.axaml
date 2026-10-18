@@ -400,7 +400,7 @@
                             <TextBlock Text="{Binding Loc[Section_Popular]}" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" VerticalAlignment="Center" />
                         </StackPanel>
                         <Button Grid.Column="1" Command="{Binding ViewAllPopularCommand}" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
-                            <TextBlock Text="{Binding Loc[Link_ViewAll], FallbackValue='Смотреть все →'}" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Link_ViewAll], FallbackValue='Смотреть все'}" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
                         </Button>
                     </Grid>
 
@@ -428,7 +428,7 @@
                             <TextBlock Text="{Binding Loc[Section_Recent]}" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" VerticalAlignment="Center" />
                         </StackPanel>
                         <Button Grid.Column="1" Command="{Binding LoadMoreModsCommand}" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
-                            <TextBlock Text="{Binding Loc[Link_ViewAll], FallbackValue='Смотреть все →'}" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Link_ViewAll], FallbackValue='Смотреть все'}" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
                         </Button>
                     </Grid>
 
@@ -565,7 +565,7 @@
                                 </StackPanel>
                             </Button>
 
-                            <TextBlock Text="{Binding RecentMods.Count, StringFormat='{}Показано {0} модов'}"
+                            <TextBlock Text="{Binding StatusCountDisplay}"
                                        FontSize="11" Foreground="#64748B" HorizontalAlignment="Center" />
                         </StackPanel>
                     </Border>

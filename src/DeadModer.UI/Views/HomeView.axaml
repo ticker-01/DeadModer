@@ -61,7 +61,7 @@
                                     Foreground="#FFFFFF" FontSize="12" FontWeight="SemiBold" Cursor="Hand">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <PathIcon Data="{StaticResource IconMods}" Width="13" Height="13" Foreground="#FFFFFF" />
-                                    <TextBlock Text="Открыть каталог модов →" VerticalAlignment="Center" />
+                                    <TextBlock Text="Открыть каталог модов" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
@@ -136,7 +136,7 @@
                             <TextBlock Text="Модификации по персонажам" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" />
                         </StackPanel>
                         <Button Grid.Column="1" Command="{Binding GoToHeroesCommand}" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
-                            <TextBlock Text="Все герои →" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                            <TextBlock Text="Все герои" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
                         </Button>
                     </Grid>
 
@@ -195,7 +195,7 @@
                         <TextBlock Text="Популярные моды недели" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" VerticalAlignment="Center" />
                     </StackPanel>
                     <Button Grid.Column="1" Command="{Binding GoToCatalogCommand}" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
-                        <TextBlock Text="Смотреть все →" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                        <TextBlock Text="Смотреть все" FontSize="11" Foreground="#CBD5E1" VerticalAlignment="Center" />
                     </Button>
                 </Grid>
 

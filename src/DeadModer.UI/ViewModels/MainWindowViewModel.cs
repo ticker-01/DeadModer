@@ -162,13 +162,17 @@ public partial class MainWindowViewModel : ViewModelBase
             Catalog.SearchQuery = heroName;
         };
 
-        // Навигация из вкладки героев в каталог с поиском по имени героя
-        var heroesVm = new HeroesViewModel(heroName =>
+        // Навигация из вкладки героев в каталог с поиском по имени героя и синхронизация списка героев
+        heroesViewModel.SetFilterCallback(heroName =>
         {
             Navigate(NavigationTab.Mods);
             Catalog.SearchQuery = heroName;
         });
-        Heroes = heroesVm;
+        heroesViewModel.HeroesLoaded += heroNames =>
+        {
+            Catalog.UpdateAvailableHeroes(heroNames);
+        };
+        Heroes = heroesViewModel;
 
         Loc.LanguageChanged += UpdateGameStatusText;
     }

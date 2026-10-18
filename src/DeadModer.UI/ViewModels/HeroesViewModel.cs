@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -83,27 +84,27 @@ public class HeroAbilityViewModel
 /// </summary>
 public partial class HeroItemViewModel : ViewModelBase
 {
-    public string Name { get; init; } = string.Empty;
-    public string Title { get; init; } = string.Empty;
-    public string Epithet { get; init; } = string.Empty;
-    public string HeroCode { get; init; } = string.Empty;
-    public string RoleType { get; init; } = "Assault"; // Assault, Tank, Support, Control, Defense
-    public string RoleRu { get; init; } = "Атакующий";
-    public string RoleEn { get; init; } = "Assault";
-    public string RoleIcon { get; init; } = "🔥";
-    public string BadgeColor { get; init; } = "#EF4444";
-    public string LoreSummaryRu { get; init; } = string.Empty;
-    public string LoreSummaryEn { get; init; } = string.Empty;
-    public string CardPortraitUrl { get; init; } = string.Empty;
-    public string FullPortraitUrl { get; init; } = string.Empty;
-    public bool IsLocked { get; init; } = false;
+    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Epithet { get; set; } = string.Empty;
+    public string HeroCode { get; set; } = string.Empty;
+    public string RoleType { get; set; } = "Assault"; // Assault, Tank, Support, Control, Defense
+    public string RoleRu { get; set; } = "Атакующий";
+    public string RoleEn { get; set; } = "Assault";
+    public string RoleIcon { get; set; } = "🔥";
+    public string BadgeColor { get; set; } = "#EF4444";
+    public string LoreSummaryRu { get; set; } = string.Empty;
+    public string LoreSummaryEn { get; set; } = string.Empty;
+    public string CardPortraitUrl { get; set; } = string.Empty;
+    public string FullPortraitUrl { get; set; } = string.Empty;
+    public bool IsLocked { get; set; } = false;
 
-    public int Hp { get; init; } = 550;
+    public int Hp { get; set; } = 550;
     public double HpPercent => Math.Clamp(Hp / 10.0, 10, 100);
-    public double Stamina { get; init; } = 3.2;
+    public double Stamina { get; set; } = 3.2;
     public double StaminaPercent => Math.Clamp(Stamina * 20.0, 10, 100);
-    public string Speed { get; init; } = "7.0 м/с";
-    public double SpeedPercent { get; init; } = 70.0;
+    public string Speed { get; set; } = "7.0 м/с";
+    public double SpeedPercent { get; set; } = 70.0;
 
     public ObservableCollection<string> Features { get; } = [];
     public ObservableCollection<HeroAbilityViewModel> Abilities { get; } = [];
@@ -189,9 +190,12 @@ public partial class HeroItemViewModel : ViewModelBase
 public partial class HeroesViewModel : ViewModelBase
 {
     private const int PageSize = 16;
-    private readonly Action<string>? _onHeroFilterRequested;
+    private Action<string>? _onHeroFilterRequested;
     private readonly ICachedModRepository? _cachedModRepository;
     private readonly ISteamLocator? _steamLocator;
+    private readonly IDeadlockerScraper? _deadlockerScraper;
+
+    public event Action<IReadOnlyList<string>>? HeroesLoaded;
 
     [ObservableProperty]
     private string _searchQuery = string.Empty;
@@ -208,20 +212,26 @@ public partial class HeroesViewModel : ViewModelBase
     [ObservableProperty]
     private int _totalPages = 2;
 
+    public bool CanPrevPage => CurrentPage > 1;
+    public bool CanNextPage => CurrentPage < TotalPages;
+    public string PageDisplayInfo => $"{CurrentPage} / {TotalPages}";
+
     public ObservableCollection<HeroItemViewModel> AllHeroes { get; } = [];
     public ObservableCollection<HeroItemViewModel> FilteredHeroes { get; } = [];
     public ObservableCollection<HeroItemViewModel> DisplayedHeroes { get; } = [];
 
-    public HeroesViewModel() : this(null, null, null) { }
+    public HeroesViewModel() : this(null, null, null, null) { }
 
     public HeroesViewModel(
         Action<string>? onHeroFilterRequested = null,
         ICachedModRepository? cachedModRepository = null,
-        ISteamLocator? steamLocator = null)
+        ISteamLocator? steamLocator = null,
+        IDeadlockerScraper? deadlockerScraper = null)
     {
         _onHeroFilterRequested = onHeroFilterRequested;
         _cachedModRepository = cachedModRepository;
         _steamLocator = steamLocator;
+        _deadlockerScraper = deadlockerScraper;
 
         InitializeRoster();
         ApplyFilter();
@@ -230,6 +240,14 @@ public partial class HeroesViewModel : ViewModelBase
         {
             SelectHero(AllHeroes[0]);
         }
+
+        // Автоматическая фоновая подгрузка и обновление всех героев с Deadlocker API
+        _ = LoadCharactersFromWebAsync();
+    }
+
+    public void SetFilterCallback(Action<string> onHeroFilterRequested)
+    {
+        _onHeroFilterRequested = onHeroFilterRequested;
     }
 
     partial void OnSearchQueryChanged(string value)
@@ -347,6 +365,128 @@ public partial class HeroesViewModel : ViewModelBase
         {
             DisplayedHeroes.Add(h);
             h.LoadPortraits();
+        }
+    }
+
+    /// <summary>
+    /// Автоматическая загрузка полного списка персонажей Deadlock (50+ героев, включая лабораторию Hero Labs)
+    /// напрямую из API / веб-сервисов с динамическим обновлением характеристик, способностей и ростера.
+    /// </summary>
+    public async Task LoadCharactersFromWebAsync(CancellationToken cancellationToken = default)
+    {
+        if (_deadlockerScraper == null) return;
+
+        try
+        {
+            var characters = await _deadlockerScraper.FetchCharactersAsync(cancellationToken);
+            if (characters == null || characters.Count == 0) return;
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var existingByName = AllHeroes.ToDictionary(h => h.Name, StringComparer.OrdinalIgnoreCase);
+                var heroNames = new List<string>();
+
+                foreach (var dto in characters)
+                {
+                    heroNames.Add(dto.Name);
+
+                    if (existingByName.TryGetValue(dto.Name, out var existing))
+                    {
+                        if (dto.ModsCount > 0) existing.ModCount = dto.ModsCount;
+                        if (dto.Health > 0) existing.Hp = dto.Health;
+                        if (dto.Stamina > 0) existing.Stamina = dto.Stamina;
+                        if (dto.MoveSpeed > 0)
+                        {
+                            existing.Speed = $"{dto.MoveSpeed:0.0} м/с";
+                            existing.SpeedPercent = dto.MoveSpeed * 10;
+                        }
+                        if (string.IsNullOrEmpty(existing.CardPortraitUrl) && !string.IsNullOrEmpty(dto.ImageUrl))
+                        {
+                            existing.CardPortraitUrl = dto.ImageUrl;
+                        }
+                    }
+                    else
+                    {
+                        var roleRu = dto.RoleType switch
+                        {
+                            "Assault" => "Атакующий",
+                            "Defense" or "Tank" => "Защитник",
+                            "Support" => "Поддержка",
+                            "Control" => "Контроль",
+                            _ => "Герой"
+                        };
+                        var roleIcon = dto.RoleType switch
+                        {
+                            "Assault" => "🔥",
+                            "Defense" or "Tank" => "🛡",
+                            "Support" => "❤️",
+                            "Control" => "👁",
+                            _ => "🎯"
+                        };
+                        var badgeColor = dto.RoleType switch
+                        {
+                            "Assault" => "#EF4444",
+                            "Defense" or "Tank" => "#3B82F6",
+                            "Support" => "#10B981",
+                            "Control" => "#8B5CF6",
+                            _ => "#EAB308"
+                        };
+
+                        var hero = new HeroItemViewModel(SelectHero)
+                        {
+                            Name = dto.Name,
+                            Title = dto.Name.ToUpperInvariant(),
+                            Epithet = dto.IsHeroLabs ? "Hero Labs Experimental" : (dto.ClassName ?? "Deadlock Hero"),
+                            HeroCode = !string.IsNullOrEmpty(dto.ClassName) ? dto.ClassName : dto.Id,
+                            RoleType = dto.RoleType,
+                            RoleRu = roleRu,
+                            RoleEn = dto.RoleType,
+                            RoleIcon = roleIcon,
+                            BadgeColor = badgeColor,
+                            Hp = dto.Health > 0 ? dto.Health : 550,
+                            Stamina = dto.Stamina > 0 ? dto.Stamina : 3.0,
+                            Speed = $"{dto.MoveSpeed:0.0} м/с",
+                            SpeedPercent = dto.MoveSpeed * 10,
+                            LoreSummaryRu = !string.IsNullOrWhiteSpace(dto.Description)
+                                ? dto.Description
+                                : (dto.IsHeroLabs ? "Экспериментальный персонаж лаборатории Deadlock Hero Labs." : $"Персонаж {dto.Name} в Deadlock."),
+                            LoreSummaryEn = !string.IsNullOrWhiteSpace(dto.Description)
+                                ? dto.Description
+                                : (dto.IsHeroLabs ? "Experimental Hero Labs character in Deadlock." : $"{dto.Name} in Deadlock."),
+                            CardPortraitUrl = dto.ImageUrl ?? dto.IconUrl ?? string.Empty,
+                            FullPortraitUrl = dto.ImageUrl ?? string.Empty,
+                            ModCount = dto.ModsCount
+                        };
+
+                        if (dto.IsHeroLabs)
+                        {
+                            hero.Features.Add("Экспериментальный герой Hero Labs");
+                        }
+                        hero.Features.Add($"Роль: {hero.RoleRu}");
+
+                        foreach (var ab in dto.Abilities)
+                        {
+                            hero.Abilities.Add(new HeroAbilityViewModel
+                            {
+                                Slot = ab.Slot,
+                                Name = ab.Name,
+                                Description = ab.Description,
+                                IconEmoji = "⚡"
+                            });
+                        }
+
+                        AllHeroes.Add(hero);
+                        existingByName[dto.Name] = hero;
+                    }
+                }
+
+                ApplyFilter();
+                HeroesLoaded?.Invoke(heroNames);
+            });
+        }
+        catch
+        {
+            // Игнорируем сетевые сбои
         }
     }
 

@@ -30,4 +30,9 @@ public interface IDeadlockerScraper
     /// Быстро извлекает прямую ссылку на скачивание (.vpk / .zip) со страницы мода.
     /// </summary>
     Task<string?> ExtractDirectDownloadUrlAsync(string pageUrl, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Автоматически получает полный актуальный список персонажей/героев Deadlock через официальный API.
+    /// </summary>
+    Task<IReadOnlyList<DeadlockCharacterDto>> FetchCharactersAsync(CancellationToken cancellationToken = default);
 }

@@ -208,8 +208,20 @@ public partial class ModCatalogViewModel : ViewModelBase
     public bool IsNsfwSfwOnly => NsfwFilter == ModNsfwFilter.SfwOnly;
     public bool IsNsfwOnly => NsfwFilter == ModNsfwFilter.NsfwOnly;
 
-    public IReadOnlyList<string> FilterHeroOptions { get; } =
-        ["Все герои", ..DeadlockHeroes];
+    public ObservableCollection<string> FilterHeroOptions { get; } =
+        new(["Все герои", ..DeadlockHeroes]);
+
+    public void UpdateAvailableHeroes(IEnumerable<string> heroNames)
+    {
+        var existing = new HashSet<string>(FilterHeroOptions, StringComparer.OrdinalIgnoreCase);
+        foreach (var hero in heroNames.OrderBy(h => h))
+        {
+            if (!string.IsNullOrWhiteSpace(hero) && existing.Add(hero))
+            {
+                FilterHeroOptions.Add(hero);
+            }
+        }
+    }
 
     public IReadOnlyList<string> PopularHeroes { get; } =
         ["Vindicta", "Infernus", "Abrams", "Kelvin", "Wraith", "Seven", "Grey Talon", "Bebop"];
@@ -238,7 +250,17 @@ public partial class ModCatalogViewModel : ViewModelBase
                                     OnlyReadyToInstall ||
                                     !string.IsNullOrWhiteSpace(SearchQuery);
 
-    public IReadOnlyList<string> AvailableHeroes => DeadlockHeroes;
+    public IReadOnlyList<string> AvailableHeroes => FilterHeroOptions;
+
+    private const int DefaultRecentPageSize = 35;
+
+    [ObservableProperty]
+    private int _displayedRecentCount = DefaultRecentPageSize;
+
+    [ObservableProperty]
+    private bool _hasMoreRecentToDisplay = false;
+
+    public string StatusCountDisplay => $"Показано {FilteredRecentMods.Count} из {FilteredCount} модов";
 
     [ObservableProperty]
     private bool _isLoadingMore = false;
@@ -922,15 +944,20 @@ public partial class ModCatalogViewModel : ViewModelBase
             FilteredPopularMods.Add(card);
         }
 
+        var allFilteredRecent = SortSequence(RecentMods.Where(FilterPredicate)).ToList();
+        FilteredCount = allFilteredRecent.Count;
+
         FilteredRecentMods.Clear();
-        foreach (var card in SortSequence(RecentMods.Where(FilterPredicate)))
+        var toTake = allFilteredRecent.Take(DisplayedRecentCount);
+        foreach (var card in toTake)
         {
             card.IsVisible = true;
             FilteredRecentMods.Add(card);
         }
 
-        FilteredCount = FilteredRecentMods.Count;
+        HasMoreRecentToDisplay = allFilteredRecent.Count > FilteredRecentMods.Count;
         OnPropertyChanged(nameof(FilterResultsText));
+        OnPropertyChanged(nameof(StatusCountDisplay));
         OnPropertyChanged(nameof(HasActiveFilters));
     }
 
@@ -1002,13 +1029,28 @@ public partial class ModCatalogViewModel : ViewModelBase
             CurrentDetailScreenshot = mod.PreviewBitmap;
         }
 
-        // Заполняем список других модов от этого автора или рекомендованных
+        // Заполняем список других модов от этого автора или рекомендованных (быстрый ограниченный поиск)
         AuthorOtherMods.Clear();
-        var others = PopularMods.Concat(RecentMods)
-            .Where(m => m.Id != mod.Id)
-            .GroupBy(m => m.Id)
-            .Select(g => g.First())
-            .Take(3);
+        var others = new List<ModCardViewModel>(3);
+        foreach (var m in PopularMods)
+        {
+            if (m.Id != mod.Id)
+            {
+                others.Add(m);
+                if (others.Count == 3) break;
+            }
+        }
+        if (others.Count < 3)
+        {
+            foreach (var m in RecentMods)
+            {
+                if (m.Id != mod.Id && !others.Any(o => o.Id == m.Id))
+                {
+                    others.Add(m);
+                    if (others.Count == 3) break;
+                }
+            }
+        }
 
         foreach (var other in others)
         {
@@ -1195,6 +1237,13 @@ public partial class ModCatalogViewModel : ViewModelBase
     [RelayCommand]
     public async Task LoadMoreModsAsync(CancellationToken cancellationToken = default)
     {
+        if (HasMoreRecentToDisplay)
+        {
+            DisplayedRecentCount += DefaultRecentPageSize;
+            ApplyFilter();
+            return;
+        }
+
         if (IsLoadingMore) return;
         IsLoadingMore = true;
 

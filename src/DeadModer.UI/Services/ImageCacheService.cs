@@ -24,6 +24,7 @@ public static class ImageCacheService
 
     private static readonly ConcurrentDictionary<string, Bitmap> MemoryCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, Task<Bitmap?>> InFlightTasks = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly SemaphoreSlim DecodeThrottle = new(4, 4);
     private static readonly string CacheDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DeadModer",
@@ -76,6 +77,7 @@ public static class ImageCacheService
 
     private static async Task<Bitmap?> LoadBitmapInternalAsync(string urlOrPath, CancellationToken cancellationToken)
     {
+        await DecodeThrottle.WaitAsync(cancellationToken);
         try
         {
             // 2. Локальный ресурс Avalonia (avares://)
@@ -179,6 +181,10 @@ public static class ImageCacheService
         catch
         {
             // Безопасно глушим ошибки сети, чтобы UI не падал при оффлайне или битых ссылках
+        }
+        finally
+        {
+            DecodeThrottle.Release();
         }
 
         return null;

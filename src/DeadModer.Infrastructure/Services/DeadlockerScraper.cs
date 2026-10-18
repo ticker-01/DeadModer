@@ -253,6 +253,138 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
         return details?.DownloadUrl;
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DeadlockCharacterDto>> FetchCharactersAsync(CancellationToken cancellationToken = default)
+    {
+        const string endpoint = "https://deadlocker.net/api/v1/characters";
+        _logger?.LogInformation("Запрос списка всех персонажей Deadlock: {Endpoint}", endpoint);
+
+        try
+        {
+            var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger?.LogWarning("Deadlocker Characters API вернул статус {StatusCode}", response.StatusCode);
+                return [];
+            }
+
+            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+            if (!doc.RootElement.TryGetProperty("characters", out var charArray) || charArray.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var list = new List<DeadlockCharacterDto>();
+
+            foreach (var el in charArray.EnumerateArray())
+            {
+                var name = el.TryGetProperty("name", out var nProp) ? nProp.GetString() ?? "" : "";
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                var id = el.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? name.ToLowerInvariant() : name.ToLowerInvariant();
+                var numId = el.TryGetProperty("numeric_id", out var numProp) && numProp.TryGetInt32(out var ni) ? ni : 0;
+                var cls = el.TryGetProperty("class", out var clsProp) ? clsProp.GetString() ?? "" : "";
+                var image = el.TryGetProperty("image", out var imgProp) ? imgProp.GetString() : null;
+                var icon = el.TryGetProperty("icon", out var iconProp) ? iconProp.GetString() : null;
+                var descHtml = el.TryGetProperty("description", out var descProp) ? descProp.GetString() : null;
+                var descClean = descHtml != null
+                    ? Regex.Replace(descHtml, "<.*?>", " ").Replace("&quot;", "\"").Replace("&amp;", "&").Trim()
+                    : null;
+                var isLabs = el.TryGetProperty("is_hero_labs", out var labsProp) && labsProp.GetBoolean();
+                var modsCount = el.TryGetProperty("mods_count", out var mcProp) && mcProp.TryGetInt32(out var mc) ? mc : 0;
+
+                double stamina = 3.0;
+                double speed = 7.0;
+                int hp = 550;
+
+                if (el.TryGetProperty("stats", out var stats) && stats.ValueKind == JsonValueKind.Object)
+                {
+                    if (stats.TryGetProperty("stamina", out var stamProp))
+                    {
+                        if (stamProp.TryGetDouble(out var sVal)) stamina = sVal;
+                        else if (double.TryParse(stamProp.GetString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var sParsed)) stamina = sParsed;
+                    }
+                    if (stats.TryGetProperty("move_speed", out var spdProp))
+                    {
+                        if (spdProp.TryGetDouble(out var spdVal)) speed = spdVal;
+                        else if (double.TryParse(spdProp.GetString()?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var spdParsed)) speed = spdParsed;
+                    }
+                    if (stats.TryGetProperty("health", out var hpObj) && hpObj.ValueKind == JsonValueKind.Object)
+                    {
+                        if (hpObj.TryGetProperty("base", out var baseHp) && baseHp.TryGetInt32(out var bVal)) hp = bVal;
+                    }
+                }
+
+                var roleType = InferRoleType(cls, name);
+
+                var heroDto = new DeadlockCharacterDto
+                {
+                    Id = id,
+                    Name = name,
+                    NumericId = numId,
+                    ClassName = cls,
+                    ImageUrl = image,
+                    IconUrl = icon,
+                    Description = descClean,
+                    IsHeroLabs = isLabs,
+                    ModsCount = modsCount,
+                    Stamina = stamina,
+                    MoveSpeed = speed,
+                    Health = hp,
+                    RoleType = roleType
+                };
+
+                if (el.TryGetProperty("abilities", out var abObj) && abObj.ValueKind == JsonValueKind.Object)
+                {
+                    ParseAbility(abObj, "primary", "1", heroDto.Abilities);
+                    ParseAbility(abObj, "secondary", "2", heroDto.Abilities);
+                    ParseAbility(abObj, "tertiary", "3", heroDto.Abilities);
+                    ParseAbility(abObj, "ultimate", "Ульта", heroDto.Abilities);
+                }
+
+                list.Add(heroDto);
+            }
+
+            _logger?.LogInformation("Успешно распарсено {Count} персонажей Deadlock с сайта", list.Count);
+            return list;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger?.LogError(ex, "Ошибка при парсинге персонажей Deadlock");
+            return [];
+        }
+    }
+
+    private static void ParseAbility(JsonElement abObj, string propName, string slot, List<DeadlockAbilityDto> list)
+    {
+        if (abObj.TryGetProperty(propName, out var aProp) && aProp.ValueKind == JsonValueKind.Object)
+        {
+            var name = aProp.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+            var icon = aProp.TryGetProperty("icon", out var ic) ? ic.GetString() : null;
+            var id = aProp.TryGetProperty("id", out var i) && i.TryGetInt32(out var val) ? val : 0;
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                list.Add(new DeadlockAbilityDto
+                {
+                    Id = id,
+                    Slot = slot,
+                    Name = name,
+                    IconUrl = icon
+                });
+            }
+        }
+    }
+
+    private static string InferRoleType(string cls, string name)
+    {
+        var lower = (cls + " " + name).ToLowerInvariant();
+        if (lower.Contains("tank") || lower.Contains("atlas") || lower.Contains("bull") || lower.Contains("abrams") || lower.Contains("warden")) return "Tank";
+        if (lower.Contains("support") || lower.Contains("dynamo") || lower.Contains("kelvin") || lower.Contains("nurse") || lower.Contains("tengu") || lower.Contains("ivy")) return "Support";
+        if (lower.Contains("control") || lower.Contains("chrono") || lower.Contains("paradox") || lower.Contains("synth") || lower.Contains("pocket") || lower.Contains("viscous")) return "Control";
+        if (lower.Contains("defense") || lower.Contains("forge") || lower.Contains("mcginnis")) return "Defense";
+        return "Assault";
+    }
+
     private static string? ExtractDownloadUrlFromDocument(AngleSharp.Html.Dom.IHtmlDocument document, Uri baseUri)
     {
         var anchors = document.QuerySelectorAll("a[href]").ToList();
