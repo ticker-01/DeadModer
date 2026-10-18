@@ -69,19 +69,66 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isAccountsModalOpen = false;
 
     [ObservableProperty]
+    private int _accountMode = 0; // 0 = Регистрация, 1 = Вход, 2 = Быстрая симуляция
+
+    [ObservableProperty]
+    private string _inputUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _inputEmail = string.Empty;
+
+    [ObservableProperty]
+    private string _inputPassword = string.Empty;
+
+    [ObservableProperty]
     private string _gameBananaUsername = string.Empty;
 
     [ObservableProperty]
     private string _deadlockerUsername = string.Empty;
 
     [ObservableProperty]
+    private bool _isGameBananaAuthenticated = false;
+
+    [ObservableProperty]
+    private bool _isDeadlockerAuthenticated = false;
+
+    [ObservableProperty]
+    private bool _isSimulatedMemberActive = false;
+
+    [ObservableProperty]
+    private bool _unlockRestrictedMods = true;
+
+    [ObservableProperty]
     private string _accountsStatusMessage = string.Empty;
 
-    public string UserDisplayName => !string.IsNullOrWhiteSpace(GameBananaUsername) 
-        ? GameBananaUsername 
-        : (!string.IsNullOrWhiteSpace(DeadlockerUsername) ? DeadlockerUsername : (Loc.IsEnglish ? "Profile" : "Профиль"));
+    [ObservableProperty]
+    private bool _accountsStatusIsSuccess = true;
 
-    public bool HasLinkedAccount => !string.IsNullOrWhiteSpace(GameBananaUsername) || !string.IsNullOrWhiteSpace(DeadlockerUsername);
+    public bool IsModeRegister => AccountMode == 0;
+    public bool IsModeLogin => AccountMode == 1;
+    public bool IsModeQuick => AccountMode == 2;
+
+    public bool IsAuthenticated => IsGameBananaAuthenticated || IsDeadlockerAuthenticated || IsSimulatedMemberActive;
+
+    partial void OnAccountModeChanged(int value)
+    {
+        OnPropertyChanged(nameof(IsModeRegister));
+        OnPropertyChanged(nameof(IsModeLogin));
+        OnPropertyChanged(nameof(IsModeQuick));
+    }
+
+    public string UserDisplayName
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(GameBananaUsername)) return GameBananaUsername;
+            if (!string.IsNullOrWhiteSpace(DeadlockerUsername)) return DeadlockerUsername;
+            if (IsAuthenticated) return "DeadlockGamer";
+            return Loc.IsEnglish ? "Sign In / Register" : "Вход / Регистрация";
+        }
+    }
+
+    public bool HasLinkedAccount => IsAuthenticated || !string.IsNullOrWhiteSpace(GameBananaUsername) || !string.IsNullOrWhiteSpace(DeadlockerUsername);
 
     public HomeViewModel Home { get; }
     public ModCatalogViewModel Catalog { get; }
@@ -174,6 +221,10 @@ public partial class MainWindowViewModel : ViewModelBase
         };
         Heroes = heroesViewModel;
 
+        // Привязка действий управления аккаунтами из каталога
+        Catalog.OnRequestOpenAccounts = () => OpenAccounts();
+        Catalog.OnQuickSimulateRequested = async () => await QuickSimulateAccountAsync();
+
         Loc.LanguageChanged += UpdateGameStatusText;
     }
 
@@ -205,8 +256,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
             GameBananaUsername = Settings.GameBananaUsername ?? string.Empty;
             DeadlockerUsername = Settings.DeadlockerUsername ?? string.Empty;
+            IsGameBananaAuthenticated = Settings.IsGameBananaAuthenticated;
+            IsDeadlockerAuthenticated = Settings.IsDeadlockerAuthenticated;
+            IsSimulatedMemberActive = Settings.IsSimulatedMemberActive;
+            UnlockRestrictedMods = Settings.UnlockRestrictedMods;
+
+            Catalog.ApplyAuthenticationState(IsAuthenticated, UnlockRestrictedMods);
+
             OnPropertyChanged(nameof(UserDisplayName));
             OnPropertyChanged(nameof(HasLinkedAccount));
+            OnPropertyChanged(nameof(IsAuthenticated));
 
             if (!string.IsNullOrWhiteSpace(Settings.Language))
             {
@@ -402,12 +461,248 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         IsAccountsModalOpen = true;
         AccountsStatusMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(InputUsername) && !string.IsNullOrWhiteSpace(GameBananaUsername))
+        {
+            InputUsername = GameBananaUsername;
+        }
     }
 
     [RelayCommand]
     public void CloseAccounts()
     {
         IsAccountsModalOpen = false;
+        AccountsStatusMessage = string.Empty;
+    }
+
+    [RelayCommand]
+    public void SetAccountMode(object? modeObj)
+    {
+        if (modeObj is int modeInt)
+        {
+            AccountMode = modeInt;
+        }
+        else if (modeObj is string modeStr && int.TryParse(modeStr, out var parsed))
+        {
+            AccountMode = parsed;
+        }
+        AccountsStatusMessage = string.Empty;
+    }
+
+    /// <summary>
+    /// Симуляция полноценной регистрации на сайтах модов с получением сессионного токена.
+    /// </summary>
+    [RelayCommand]
+    public async Task RegisterAccountAsync()
+    {
+        try
+        {
+            var username = InputUsername?.Trim();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = $"DeadlockPlayer_{Random.Shared.Next(1000, 9999)}";
+                InputUsername = username;
+            }
+
+            var email = InputEmail?.Trim();
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                email = $"{username.ToLowerInvariant()}@deadlock-community.net";
+            }
+
+            GameBananaUsername = username;
+            DeadlockerUsername = username;
+            IsGameBananaAuthenticated = true;
+            IsDeadlockerAuthenticated = true;
+            IsSimulatedMemberActive = true;
+            UnlockRestrictedMods = true;
+
+            Settings ??= await _settingsRepository.GetSettingsAsync();
+            Settings.GameBananaUsername = GameBananaUsername;
+            Settings.GameBananaEmail = email;
+            Settings.GameBananaAuthToken = $"gb_sess_{Guid.NewGuid():N}";
+            Settings.IsGameBananaAuthenticated = true;
+
+            Settings.DeadlockerUsername = DeadlockerUsername;
+            Settings.DeadlockerEmail = email;
+            Settings.DeadlockerAuthToken = $"dl_token_{Guid.NewGuid():N}";
+            Settings.IsDeadlockerAuthenticated = true;
+
+            Settings.IsSimulatedMemberActive = true;
+            Settings.UnlockRestrictedMods = true;
+
+            await _settingsRepository.SaveSettingsAsync(Settings);
+
+            Catalog.ApplyAuthenticationState(true, true);
+
+            OnPropertyChanged(nameof(UserDisplayName));
+            OnPropertyChanged(nameof(HasLinkedAccount));
+            OnPropertyChanged(nameof(IsAuthenticated));
+
+            AccountsStatusIsSuccess = true;
+            AccountsStatusMessage = Loc.IsEnglish
+                ? $"Account '{username}' registered! All mods unlocked."
+                : $"Аккаунт '{username}' успешно создан! Все закрытые моды разблокированы.";
+
+            await Task.Delay(1400);
+            IsAccountsModalOpen = false;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Ошибка при регистрации аккаунта");
+            AccountsStatusIsSuccess = false;
+            AccountsStatusMessage = Loc.IsEnglish ? "Registration error" : "Ошибка регистрации";
+        }
+    }
+
+    /// <summary>
+    /// Авторизация в существующий профиль (симуляция входа с разблокировкой каталога).
+    /// </summary>
+    [RelayCommand]
+    public async Task LoginAccountAsync()
+    {
+        try
+        {
+            var username = InputUsername?.Trim();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                AccountsStatusIsSuccess = false;
+                AccountsStatusMessage = Loc.IsEnglish ? "Please enter username or email" : "Введите никнейм или email";
+                return;
+            }
+
+            GameBananaUsername = username;
+            DeadlockerUsername = username;
+            IsGameBananaAuthenticated = true;
+            IsDeadlockerAuthenticated = true;
+            IsSimulatedMemberActive = true;
+            UnlockRestrictedMods = true;
+
+            Settings ??= await _settingsRepository.GetSettingsAsync();
+            Settings.GameBananaUsername = GameBananaUsername;
+            Settings.IsGameBananaAuthenticated = true;
+            Settings.GameBananaAuthToken = $"gb_sess_{Guid.NewGuid():N}";
+            Settings.DeadlockerUsername = DeadlockerUsername;
+            Settings.IsDeadlockerAuthenticated = true;
+            Settings.DeadlockerAuthToken = $"dl_token_{Guid.NewGuid():N}";
+            Settings.IsSimulatedMemberActive = true;
+            Settings.UnlockRestrictedMods = true;
+
+            await _settingsRepository.SaveSettingsAsync(Settings);
+
+            Catalog.ApplyAuthenticationState(true, true);
+
+            OnPropertyChanged(nameof(UserDisplayName));
+            OnPropertyChanged(nameof(HasLinkedAccount));
+            OnPropertyChanged(nameof(IsAuthenticated));
+
+            AccountsStatusIsSuccess = true;
+            AccountsStatusMessage = Loc.IsEnglish
+                ? $"Welcome back, {username}! Catalog fully unlocked."
+                : $"Добро пожаловать, {username}! Полный доступ к каталогу открыт.";
+
+            await Task.Delay(1400);
+            IsAccountsModalOpen = false;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Ошибка при входе в аккаунт");
+            AccountsStatusIsSuccess = false;
+            AccountsStatusMessage = Loc.IsEnglish ? "Login error" : "Ошибка авторизации";
+        }
+    }
+
+    /// <summary>
+    /// Мгновенная симуляция авторизованного аккаунта в 1 клик (разблокирует все моды без ручного ввода).
+    /// </summary>
+    [RelayCommand]
+    public async Task QuickSimulateAccountAsync()
+    {
+        try
+        {
+            var sysUser = Environment.UserName;
+            var username = !string.IsNullOrWhiteSpace(sysUser) && sysUser.Length > 2
+                ? sysUser
+                : $"DeadlockMember_{Random.Shared.Next(100, 999)}";
+
+            GameBananaUsername = username;
+            DeadlockerUsername = username;
+            IsGameBananaAuthenticated = true;
+            IsDeadlockerAuthenticated = true;
+            IsSimulatedMemberActive = true;
+            UnlockRestrictedMods = true;
+
+            Settings ??= await _settingsRepository.GetSettingsAsync();
+            Settings.GameBananaUsername = GameBananaUsername;
+            Settings.IsGameBananaAuthenticated = true;
+            Settings.GameBananaAuthToken = $"gb_sim_{Guid.NewGuid():N}";
+            Settings.DeadlockerUsername = DeadlockerUsername;
+            Settings.IsDeadlockerAuthenticated = true;
+            Settings.DeadlockerAuthToken = $"dl_sim_{Guid.NewGuid():N}";
+            Settings.IsSimulatedMemberActive = true;
+            Settings.UnlockRestrictedMods = true;
+
+            await _settingsRepository.SaveSettingsAsync(Settings);
+
+            Catalog.ApplyAuthenticationState(true, true);
+
+            OnPropertyChanged(nameof(UserDisplayName));
+            OnPropertyChanged(nameof(HasLinkedAccount));
+            OnPropertyChanged(nameof(IsAuthenticated));
+
+            AccountsStatusIsSuccess = true;
+            AccountsStatusMessage = Loc.IsEnglish
+                ? "Simulated account activated! All 18+ and restricted mods unlocked."
+                : "Симуляция аккаунта активирована! Все 18+ и закрытые моды разблокированы.";
+
+            await Task.Delay(1200);
+            IsAccountsModalOpen = false;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Ошибка при быстрой симуляции аккаунта");
+            AccountsStatusIsSuccess = false;
+            AccountsStatusMessage = Loc.IsEnglish ? "Simulation error" : "Ошибка симуляции";
+        }
+    }
+
+    /// <summary>
+    /// Выход из аккаунтов с возвратом каталога в стандартный режим.
+    /// </summary>
+    [RelayCommand]
+    public async Task LogoutAccountAsync()
+    {
+        try
+        {
+            IsGameBananaAuthenticated = false;
+            IsDeadlockerAuthenticated = false;
+            IsSimulatedMemberActive = false;
+            UnlockRestrictedMods = false;
+
+            Settings ??= await _settingsRepository.GetSettingsAsync();
+            Settings.IsGameBananaAuthenticated = false;
+            Settings.IsDeadlockerAuthenticated = false;
+            Settings.IsSimulatedMemberActive = false;
+            Settings.UnlockRestrictedMods = false;
+            Settings.GameBananaAuthToken = string.Empty;
+            Settings.DeadlockerAuthToken = string.Empty;
+
+            await _settingsRepository.SaveSettingsAsync(Settings);
+
+            Catalog.ApplyAuthenticationState(false, false);
+
+            OnPropertyChanged(nameof(UserDisplayName));
+            OnPropertyChanged(nameof(HasLinkedAccount));
+            OnPropertyChanged(nameof(IsAuthenticated));
+
+            AccountsStatusIsSuccess = true;
+            AccountsStatusMessage = Loc.IsEnglish
+                ? "Logged out. Standard catalog mode applied."
+                : "Вы вышли из профиля. Включены стандартные ограничения.";
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Ошибка при выходе из аккаунта");
+        }
     }
 
     [RelayCommand]
@@ -420,6 +715,18 @@ public partial class MainWindowViewModel : ViewModelBase
     public void OpenGameBananaLogin()
     {
         OpenUrl("https://gamebanana.com/login");
+    }
+
+    [RelayCommand]
+    public void OpenDeadlockerRegister()
+    {
+        OpenUrl("https://deadlocker.net/register");
+    }
+
+    [RelayCommand]
+    public void OpenDeadlockerLogin()
+    {
+        OpenUrl("https://deadlocker.net/login");
     }
 
     [RelayCommand]
@@ -448,6 +755,7 @@ public partial class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(UserDisplayName));
             OnPropertyChanged(nameof(HasLinkedAccount));
 
+            AccountsStatusIsSuccess = true;
             AccountsStatusMessage = Loc.IsEnglish ? "Profiles saved successfully!" : "Профили успешно сохранены!";
             await Task.Delay(1200);
             IsAccountsModalOpen = false;
@@ -455,6 +763,7 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Ошибка при сохранении аккаунтов");
+            AccountsStatusIsSuccess = false;
             AccountsStatusMessage = Loc.IsEnglish ? "Failed to save settings" : "Ошибка при сохранении";
         }
     }

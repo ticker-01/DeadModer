@@ -89,8 +89,9 @@ public sealed class GameBananaClient : IGameBananaClient
         CancellationToken cancellationToken = default)
     {
         // Deadlock Game ID в GameBanana = 20948
+        // Параметр _bShowNsfw=true передается для симуляции авторизованного аккаунта с доступом ко всем модам
         var normalizedSort = sort == "new" ? "new" : "default";
-        var endpoint = $"Game/{IGameBananaClient.DeadlockGameId}/Subfeed?_nPage={page}&_nPerpage={perPage}&_sSort={normalizedSort}";
+        var endpoint = $"Game/{IGameBananaClient.DeadlockGameId}/Subfeed?_nPage={page}&_nPerpage={perPage}&_sSort={normalizedSort}&_bShowNsfw=true";
         _logger?.LogInformation("Автоматический парсинг модов Deadlock: {Endpoint}", endpoint);
 
         try

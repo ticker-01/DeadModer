@@ -98,6 +98,53 @@ public partial class ModCatalogViewModel : ViewModelBase
     [ObservableProperty]
     private string _reviewsCountSummary = string.Empty;
 
+    /// <summary>
+    /// Флаг успешной авторизации или симуляции аккаунта на сайтах модов.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isUserAuthenticated = false;
+
+    /// <summary>
+    /// Флаг разблокировки закрытых, 18+ и эксклюзивных модов.
+    /// </summary>
+    [ObservableProperty]
+    private bool _unlockRestrictedMods = false;
+
+    /// <summary>
+    /// Callback открытия диалога управления аккаунтами.
+    /// </summary>
+    public Action? OnRequestOpenAccounts { get; set; }
+
+    /// <summary>
+    /// Callback мгновенной симуляции аккаунта в 1 клик.
+    /// </summary>
+    public Func<Task>? OnQuickSimulateRequested { get; set; }
+
+    [RelayCommand]
+    public void OpenAccounts()
+    {
+        OnRequestOpenAccounts?.Invoke();
+    }
+
+    [RelayCommand]
+    public async Task QuickSimulateAccountAsync()
+    {
+        if (OnQuickSimulateRequested != null)
+        {
+            await OnQuickSimulateRequested.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Применить состояние авторизации и обновить фильтрацию каталога.
+    /// </summary>
+    public void ApplyAuthenticationState(bool isAuthenticated, bool unlockRestricted)
+    {
+        IsUserAuthenticated = isAuthenticated;
+        UnlockRestrictedMods = unlockRestricted;
+        ApplyFilter();
+    }
+
     public bool IsTabDescriptionActive => SelectedDetailTab == 0;
     public bool IsTabScreenshotsActive => SelectedDetailTab == 1;
     public bool IsTabReviewsActive => SelectedDetailTab == 2;
@@ -887,10 +934,13 @@ public partial class ModCatalogViewModel : ViewModelBase
                     return false;
             }
 
-            // 6. Эксклюзивный фильтр: Возрастной рейтинг (SFW / NSFW 18+)
+            // 6. Эксклюзивный фильтр: Возрастной рейтинг (SFW / NSFW 18+) и доступ аккаунта
             if (NsfwFilter == ModNsfwFilter.SfwOnly && card.IsNsfw)
                 return false;
             if (NsfwFilter == ModNsfwFilter.NsfwOnly && !card.IsNsfw)
+                return false;
+            // Без авторизации или симуляции аккаунта закрытые/NSFW моды скрыты, как на оригинальных сайтах
+            if (!IsUserAuthenticated && !UnlockRestrictedMods && card.IsNsfw && NsfwFilter != ModNsfwFilter.NsfwOnly)
                 return false;
 
             // 7. Эксклюзивный фильтр: Выбор редакции (Featured)

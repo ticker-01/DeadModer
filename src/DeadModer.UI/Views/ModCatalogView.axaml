@@ -392,6 +392,57 @@
                     </StackPanel>
                 </Border>
 
+                <!-- 2.2 БАННЕР СИМУЛЯЦИИ И АВТОРИЗАЦИИ НА САЙТАХ МОДОВ -->
+                <Border Background="#141926" BorderBrush="#25324A" BorderThickness="1" CornerRadius="8" Padding="14,10"
+                        IsVisible="{Binding !IsUserAuthenticated}">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Border Width="32" Height="32" Background="#1E273A" CornerRadius="6">
+                                <PathIcon Data="{StaticResource IconLock}" Width="15" Height="15" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="Без аккаунта часть модов скрыта на сайтах" FontSize="12" FontWeight="Bold" Foreground="#F8FAFC" />
+                                <TextBlock Text="Войдите или активируйте быструю симуляцию аккаунта для разблокировки всех закрытых и 18+ модов" FontSize="11" Foreground="#94A3B8" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button Command="{Binding QuickSimulateAccountCommand}"
+                                    Height="30" Padding="12,0" CornerRadius="6"
+                                    Background="#15803D" BorderBrush="#22543D" BorderThickness="1"
+                                    Foreground="#FFFFFF" FontSize="11" FontWeight="Bold" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <PathIcon Data="{StaticResource IconBolt}" Width="12" Height="12" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Text="Разблокировать все моды в 1 клик" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding OpenAccountsCommand}"
+                                    Height="30" Padding="12,0" CornerRadius="6"
+                                    Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
+                                    Foreground="#E2E8F0" FontSize="11" Cursor="Hand">
+                                <TextBlock Text="Вход / Регистрация" VerticalAlignment="Center" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 2.3 ИНДИКАТОР АКТИВНОЙ АВТОРИЗАЦИИ / РАЗБЛОКИРОВКИ -->
+                <Border Background="#0C1B14" BorderBrush="#14532D" BorderThickness="1" CornerRadius="8" Padding="14,8"
+                        IsVisible="{Binding IsUserAuthenticated}">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource IconCheckCircle}" Width="14" Height="14" Foreground="#4ADE80" VerticalAlignment="Center" />
+                            <TextBlock Text="Режим участника активен:" FontSize="11" FontWeight="Bold" Foreground="#4ADE80" VerticalAlignment="Center" />
+                            <TextBlock Text="Все 18+, закрытые и эксклюзивные моды каталога полностью разблокированы." FontSize="11" Foreground="#86EFAC" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Command="{Binding OpenAccountsCommand}"
+                                Height="24" Padding="8,0" CornerRadius="4"
+                                Background="Transparent" BorderBrush="#166534" BorderThickness="1"
+                                Foreground="#86EFAC" FontSize="10" Cursor="Hand">
+                            <TextBlock Text="Управление аккаунтом" VerticalAlignment="Center" />
+                        </Button>
+                    </Grid>
+                </Border>
+
                 <!-- 3. СЕКЦИЯ: ПОПУЛЯРНЫЕ МОДЫ (КАРУСЕЛЬ КАРТОЧЕК) -->
                 <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*, Auto">

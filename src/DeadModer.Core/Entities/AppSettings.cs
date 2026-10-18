@@ -87,8 +87,62 @@ public partial class AppSettings : ObservableObject
     private string _gameBananaUsername = string.Empty;
 
     /// <summary>
+    /// Флаг успешной авторизации/симуляции аккаунта GameBanana.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isGameBananaAuthenticated = false;
+
+    /// <summary>
+    /// Токен авторизованной сессии GameBanana.
+    /// </summary>
+    [ObservableProperty]
+    private string _gameBananaAuthToken = string.Empty;
+
+    /// <summary>
+    /// Email пользователя на GameBanana.
+    /// </summary>
+    [ObservableProperty]
+    private string _gameBananaEmail = string.Empty;
+
+    /// <summary>
     /// Имя пользователя на платформе Deadlocker.net.
     /// </summary>
     [ObservableProperty]
     private string _deadlockerUsername = string.Empty;
+
+    /// <summary>
+    /// Флаг успешной авторизации/симуляции аккаунта Deadlocker.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDeadlockerAuthenticated = false;
+
+    /// <summary>
+    /// Токен авторизованной сессии Deadlocker.
+    /// </summary>
+    [ObservableProperty]
+    private string _deadlockerAuthToken = string.Empty;
+
+    /// <summary>
+    /// Email пользователя на Deadlocker.
+    /// </summary>
+    [ObservableProperty]
+    private string _deadlockerEmail = string.Empty;
+
+    /// <summary>
+    /// Флаг активности симуляции зарегистрированного участника сайтов.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isSimulatedMemberActive = false;
+
+    /// <summary>
+    /// Разблокировать все закрытые, 18+ и эксклюзивные моды в каталоге.
+    /// </summary>
+    [ObservableProperty]
+    private bool _unlockRestrictedMods = true;
+
+    /// <summary>
+    /// URL аватарки профиля пользователя.
+    /// </summary>
+    [ObservableProperty]
+    private string _userAvatarUrl = string.Empty;
 }
