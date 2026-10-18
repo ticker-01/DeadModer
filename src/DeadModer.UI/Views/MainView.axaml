@@ -258,8 +258,8 @@
                                     <PathIcon Data="{StaticResource IconAccountCircle}" Width="20" Height="20" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Регистрация и аккаунты на сайтах" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" />
-                                    <TextBlock Text="Симуляция аккаунта разблокирует все 18+, закрытые и эксклюзивные моды" FontSize="11" Foreground="#64748B" />
+                                    <TextBlock Text="Аккаунты сайтов модификаций" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" />
+                                    <TextBlock Text="Привязка и регистрация на официальных сайтах GameBanana и Deadlocker" FontSize="11" Foreground="#64748B" />
                                 </StackPanel>
                             </StackPanel>
                             <Button Grid.Column="2" Command="{Binding CloseAccountsCommand}"
@@ -279,192 +279,194 @@
                                     <Border Width="40" Height="40" Background="#14532D" CornerRadius="20">
                                         <PathIcon Data="{StaticResource IconCheckCircle}" Width="20" Height="20" Foreground="#4ADE80" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <StackPanel VerticalAlignment="Center" Spacing="2">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="{Binding UserDisplayName}" FontWeight="Bold" FontSize="14" Foreground="#F0FDF4" />
-                                            <Border Background="#166534" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                                                <TextBlock Text="VIP Участник" FontSize="9" FontWeight="Bold" Foreground="#86EFAC" />
+                                            <Border Background="#166534" CornerRadius="4" Padding="6,1" VerticalAlignment="Center"
+                                                    IsVisible="{Binding IsGameBananaAuthenticated}">
+                                                <TextBlock Text="GameBanana" FontSize="9" FontWeight="Bold" Foreground="#86EFAC" />
+                                            </Border>
+                                            <Border Background="#0369A1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center"
+                                                    IsVisible="{Binding IsDeadlockerAuthenticated}">
+                                                <TextBlock Text="Deadlocker" FontSize="9" FontWeight="Bold" Foreground="#7DD3FC" />
                                             </Border>
                                         </StackPanel>
-                                        <TextBlock Text="Сессия активна: Доступ ко всем 18+ и закрытым модам открыт" FontSize="11" Foreground="#86EFAC" />
+                                        <TextBlock Text="Сайты подключены: Полный каталог модов открыт, комментарии активны" FontSize="11" Foreground="#86EFAC" />
                                     </StackPanel>
                                 </StackPanel>
                                 <Button Grid.Column="2" Command="{Binding LogoutAccountCommand}"
                                         Height="30" Padding="12,0" CornerRadius="6"
                                         Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
                                         Foreground="#E2E8F0" FontSize="11" Cursor="Hand">
-                                    <TextBlock Text="Выйти" VerticalAlignment="Center" />
+                                    <TextBlock Text="Отключить все" VerticalAlignment="Center" />
                                 </Button>
                             </Grid>
                         </Border>
 
-                        <!-- ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМА: [ РЕГИСТРАЦИЯ ] | [ ВХОД ] | [ БЫСТРАЯ СИМУЛЯЦИЯ ] -->
-                        <Grid ColumnDefinitions="*, 6, *, 6, *">
+                        <!-- ПЕРЕКЛЮЧАТЕЛЬ САЙТОВ: [ GameBanana.com ] | [ Deadlocker.net ] -->
+                        <Grid ColumnDefinitions="*, 8, *">
                             <Button Grid.Column="0" Command="{Binding SetAccountModeCommand}" CommandParameter="0"
-                                    Classes="tabBtn" Classes.active="{Binding IsModeRegister}">
-                                <TextBlock Text="Регистрация" VerticalAlignment="Center" />
+                                    Classes="tabBtn" Classes.active="{Binding IsModeGameBanana}">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="GameBanana.com" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
                             </Button>
                             <Button Grid.Column="2" Command="{Binding SetAccountModeCommand}" CommandParameter="1"
-                                    Classes="tabBtn" Classes.active="{Binding IsModeLogin}">
-                                <TextBlock Text="Вход" VerticalAlignment="Center" />
-                            </Button>
-                            <Button Grid.Column="4" Command="{Binding SetAccountModeCommand}" CommandParameter="2"
-                                    Classes="tabBtn" Classes.active="{Binding IsModeQuick}">
-                                <TextBlock Text="Быстрая симуляция" VerticalAlignment="Center" />
+                                    Classes="tabBtn" Classes.active="{Binding IsModeDeadlocker}">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="Deadlocker.net" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
                             </Button>
                         </Grid>
 
-                        <!-- 1. ВКЛАДКА РЕГИСТРАЦИИ -->
-                        <StackPanel Spacing="12" IsVisible="{Binding IsModeRegister}">
-                            <Border Background="#141926" BorderBrush="#1F293D" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <!-- 1. ВКЛАДКА GAMEBANANA -->
+                        <StackPanel Spacing="12" IsVisible="{Binding IsModeGameBanana}">
+                            <!-- Официальные действия в браузере (рабочие ссылки без 404) -->
+                            <Border Background="#0C101A" BorderBrush="#1A2338" BorderThickness="1" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="10">
-                                    <TextBlock Text="Создать профиль сообщества (GameBanana / Deadlocker)" FontWeight="Bold" FontSize="12" Foreground="#CBD5E1" />
-                                    <TextBlock Text="Зарегистрируйте аккаунт прямо в приложении. DeadModer создаст авторизованную сессию участника и снимет все ограничения на просмотр закрытых модов." FontSize="11" Foreground="#717A8C" TextWrapping="Wrap" />
-
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Никнейм игрока" FontSize="11" Foreground="#94A3B8" />
-                                        <TextBox Text="{Binding InputUsername, Mode=TwoWay}"
-                                                 PlaceholderText="Например, DeadlockGamer..."
-                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
-                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
-                                    </StackPanel>
-
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Email (для привязки)" FontSize="11" Foreground="#94A3B8" />
-                                        <TextBox Text="{Binding InputEmail, Mode=TwoWay}"
-                                                 PlaceholderText="your-email@example.com (необязательно)..."
-                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
-                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
-                                    </StackPanel>
-
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Пароль" FontSize="11" Foreground="#94A3B8" />
-                                        <TextBox Text="{Binding InputPassword, Mode=TwoWay}" PasswordChar="*"
-                                                 PlaceholderText="Пароль для сессии..."
-                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
-                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
-                                    </StackPanel>
-
-                                    <Button Command="{Binding RegisterAccountCommand}"
-                                            Height="36" Margin="0,4,0,0" CornerRadius="6"
-                                            Background="#15803D" BorderBrush="#22543D" BorderThickness="1"
-                                            Foreground="#FFFFFF" FontWeight="Bold" FontSize="12" Cursor="Hand"
-                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <PathIcon Data="{StaticResource IconCheck}" Width="14" Height="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-                                            <TextBlock Text="Зарегистрироваться и разблокировать моды" VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Ссылки на официальную регистрацию на сайтах в браузере -->
-                            <Border Background="#0C101A" BorderBrush="#1A2338" BorderThickness="1" CornerRadius="8" Padding="12">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="Официальная регистрация на сайтах через браузер:" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" />
+                                    <TextBlock Text="Официальные страницы GameBanana в браузере:" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" />
                                     <Grid ColumnDefinitions="*, 8, *">
                                         <Button Grid.Column="0" Command="{Binding OpenGameBananaRegisterCommand}"
-                                                Height="30" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
+                                                Height="32" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
                                                 Foreground="#F59E0B" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
                                                 HorizontalContentAlignment="Center">
-                                            <TextBlock Text="GameBanana.com ↗" VerticalAlignment="Center" />
+                                            <TextBlock Text="Регистрация на GameBanana ↗" VerticalAlignment="Center" />
                                         </Button>
-                                        <Button Grid.Column="2" Command="{Binding OpenDeadlockerRegisterCommand}"
-                                                Height="30" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
-                                                Foreground="#38BDF8" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
+                                        <Button Grid.Column="2" Command="{Binding OpenGameBananaLoginCommand}"
+                                                Height="32" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
+                                                Foreground="#F59E0B" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
                                                 HorizontalContentAlignment="Center">
-                                            <TextBlock Text="Deadlocker.net ↗" VerticalAlignment="Center" />
+                                            <TextBlock Text="Вход на GameBanana ↗" VerticalAlignment="Center" />
                                         </Button>
                                     </Grid>
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
 
-                        <!-- 2. ВКЛАДКА ВХОДА -->
-                        <StackPanel Spacing="12" IsVisible="{Binding IsModeLogin}">
+                            <!-- Привязка аккаунта в приложении -->
                             <Border Background="#141926" BorderBrush="#1F293D" BorderThickness="1" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="10">
-                                    <TextBlock Text="Вход в существующий аккаунт" FontWeight="Bold" FontSize="12" Foreground="#CBD5E1" />
-                                    <TextBlock Text="Авторизуйтесь под своим логином сайтов модов для включения полного каталога." FontSize="11" Foreground="#717A8C" />
+                                    <TextBlock Text="Привязать аккаунт GameBanana в DeadModer" FontWeight="Bold" FontSize="12" Foreground="#CBD5E1" />
+                                    <TextBlock Text="Подключите свой никнейм GameBanana для доступа ко всем закрытым модам и оставления отзывов." FontSize="11" Foreground="#717A8C" TextWrapping="Wrap" />
 
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="Логин или Email" FontSize="11" Foreground="#94A3B8" />
-                                        <TextBox Text="{Binding InputUsername, Mode=TwoWay}"
-                                                 PlaceholderText="Никнейм или email..."
+                                        <TextBlock Text="Никнейм игрока на GameBanana" FontSize="11" Foreground="#94A3B8" />
+                                        <TextBox Text="{Binding GameBananaUsername, Mode=TwoWay}"
+                                                 PlaceholderText="Ваш никнейм на GameBanana..."
                                                  Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
                                                  Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
                                     </StackPanel>
 
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="Пароль" FontSize="11" Foreground="#94A3B8" />
-                                        <TextBox Text="{Binding InputPassword, Mode=TwoWay}" PasswordChar="*"
-                                                 PlaceholderText="Пароль..."
+                                        <TextBlock Text="Email (необязательно)" FontSize="11" Foreground="#94A3B8" />
+                                        <TextBox Text="{Binding GameBananaEmail, Mode=TwoWay}"
+                                                 PlaceholderText="your-email@example.com..."
                                                  Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
                                                  Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
                                     </StackPanel>
 
-                                    <Button Command="{Binding LoginAccountCommand}"
-                                            Height="36" Margin="0,4,0,0" CornerRadius="6"
-                                            Background="#1D4ED8" BorderBrush="#2563EB" BorderThickness="1"
-                                            Foreground="#FFFFFF" FontWeight="Bold" FontSize="12" Cursor="Hand"
-                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <PathIcon Data="{StaticResource IconCheck}" Width="14" Height="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
-                                            <TextBlock Text="Войти в аккаунт" VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </Border>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="API-токен или пароль профиля (необязательно)" FontSize="11" Foreground="#94A3B8" />
+                                        <TextBox Text="{Binding GameBananaPassword, Mode=TwoWay}" PasswordChar="*"
+                                                 PlaceholderText="Для подтверждения подписи..."
+                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
+                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
+                                    </StackPanel>
 
-                            <!-- Ссылки на официальный вход -->
-                            <Border Background="#0C101A" BorderBrush="#1A2338" BorderThickness="1" CornerRadius="8" Padding="12">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="Вход через официальный сайт в браузере:" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" />
-                                    <Grid ColumnDefinitions="*, 8, *">
-                                        <Button Grid.Column="0" Command="{Binding OpenGameBananaLoginCommand}"
-                                                Height="30" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
-                                                Foreground="#F59E0B" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
-                                                HorizontalContentAlignment="Center">
-                                            <TextBlock Text="GameBanana Вход ↗" VerticalAlignment="Center" />
+                                    <Grid ColumnDefinitions="*, Auto" Margin="0,4,0,0">
+                                        <Button Grid.Column="0" Command="{Binding ConnectGameBananaCommand}"
+                                                Height="36" CornerRadius="6"
+                                                Background="#15803D" BorderBrush="#22543D" BorderThickness="1"
+                                                Foreground="#FFFFFF" FontWeight="Bold" FontSize="12" Cursor="Hand"
+                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <PathIcon Data="{StaticResource IconCheck}" Width="14" Height="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                                <TextBlock Text="Подключить аккаунт GameBanana" VerticalAlignment="Center" />
+                                            </StackPanel>
                                         </Button>
-                                        <Button Grid.Column="2" Command="{Binding OpenDeadlockerLoginCommand}"
-                                                Height="30" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
-                                                Foreground="#38BDF8" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
-                                                HorizontalContentAlignment="Center">
-                                            <TextBlock Text="Deadlocker Вход ↗" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Command="{Binding DisconnectGameBananaCommand}"
+                                                IsVisible="{Binding IsGameBananaAuthenticated}"
+                                                Height="36" Margin="8,0,0,0" Padding="12,0" CornerRadius="6"
+                                                Background="#2A1818" BorderBrush="#4A2525" BorderThickness="1"
+                                                Foreground="#F87171" FontSize="11" Cursor="Hand">
+                                            <TextBlock Text="Отключить" VerticalAlignment="Center" />
                                         </Button>
                                     </Grid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
 
-                        <!-- 3. ВКЛАДКА БЫСТРОЙ СИМУЛЯЦИИ В 1 КЛИК -->
-                        <StackPanel Spacing="12" IsVisible="{Binding IsModeQuick}">
-                            <Border Background="#141E28" BorderBrush="#223B56" BorderThickness="1" CornerRadius="8" Padding="16">
-                                <StackPanel Spacing="12">
-                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <Border Width="32" Height="32" Background="#1E3A5F" CornerRadius="6">
-                                            <PathIcon Data="{StaticResource IconBolt}" Width="16" Height="16" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <StackPanel VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="Мгновенная симуляция без ввода паролей" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" />
-                                            <TextBlock Text="Рекомендуется для быстрого доступа ко всем модам" FontSize="11" Foreground="#94A3B8" />
-                                        </StackPanel>
+                        <!-- 2. ВКЛАДКА DEADLOCKER.NET -->
+                        <StackPanel Spacing="12" IsVisible="{Binding IsModeDeadlocker}">
+                            <!-- Официальные действия в браузере -->
+                            <Border Background="#0C101A" BorderBrush="#1A2338" BorderThickness="1" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Официальные страницы Deadlocker.net в браузере:" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" />
+                                    <Grid ColumnDefinitions="*, 8, *">
+                                        <Button Grid.Column="0" Command="{Binding OpenDeadlockerRegisterCommand}"
+                                                Height="32" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
+                                                Foreground="#38BDF8" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
+                                                HorizontalContentAlignment="Center">
+                                            <TextBlock Text="Регистрация на Deadlocker ↗" VerticalAlignment="Center" />
+                                        </Button>
+                                        <Button Grid.Column="2" Command="{Binding OpenDeadlockerLoginCommand}"
+                                                Height="32" CornerRadius="6" Background="#161F33" BorderBrush="#253556" BorderThickness="1"
+                                                Foreground="#38BDF8" FontSize="11" FontWeight="SemiBold" Cursor="Hand"
+                                                HorizontalContentAlignment="Center">
+                                            <TextBlock Text="Вход на Deadlocker ↗" VerticalAlignment="Center" />
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Привязка аккаунта в приложении -->
+                            <Border Background="#141926" BorderBrush="#1F293D" BorderThickness="1" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Привязать аккаунт Deadlocker.net в DeadModer" FontWeight="Bold" FontSize="12" Foreground="#CBD5E1" />
+                                    <TextBlock Text="Подключите свой никнейм Deadlocker для доступа к эксклюзивным модам и отправки комментариев." FontSize="11" Foreground="#717A8C" TextWrapping="Wrap" />
+
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Никнейм игрока на Deadlocker" FontSize="11" Foreground="#94A3B8" />
+                                        <TextBox Text="{Binding DeadlockerUsername, Mode=TwoWay}"
+                                                 PlaceholderText="Ваш никнейм на Deadlocker..."
+                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
+                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
                                     </StackPanel>
 
-                                    <TextBlock Text="Если вам просто нужно видеть и скачивать все закрытые, 18+ и эксклюзивные моды, нажмите кнопку ниже. DeadModer создаст виртуальный верифицированный профиль участника."
-                                               FontSize="11" Foreground="#CBD5E1" LineHeight="17" TextWrapping="Wrap" />
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Email (необязательно)" FontSize="11" Foreground="#94A3B8" />
+                                        <TextBox Text="{Binding DeadlockerEmail, Mode=TwoWay}"
+                                                 PlaceholderText="your-email@example.com..."
+                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
+                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
+                                    </StackPanel>
 
-                                    <Button Command="{Binding QuickSimulateAccountCommand}"
-                                            Height="40" CornerRadius="8"
-                                            Background="#15803D" BorderBrush="#22543D" BorderThickness="1"
-                                            Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" Cursor="Hand"
-                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                            <PathIcon Data="{StaticResource IconBolt}" Width="16" Height="16" Foreground="#FFFFFF" VerticalAlignment="Center" />
-                                            <TextBlock Text="Разблокировать все моды в 1 клик" VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Токен сессии или пароль (необязательно)" FontSize="11" Foreground="#94A3B8" />
+                                        <TextBox Text="{Binding DeadlockerPassword, Mode=TwoWay}" PasswordChar="*"
+                                                 PlaceholderText="Для подтверждения сессии..."
+                                                 Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
+                                                 Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
+                                    </StackPanel>
+
+                                    <Grid ColumnDefinitions="*, Auto" Margin="0,4,0,0">
+                                        <Button Grid.Column="0" Command="{Binding ConnectDeadlockerCommand}"
+                                                Height="36" CornerRadius="6"
+                                                Background="#0284C7" BorderBrush="#0369A1" BorderThickness="1"
+                                                Foreground="#FFFFFF" FontWeight="Bold" FontSize="12" Cursor="Hand"
+                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <PathIcon Data="{StaticResource IconCheck}" Width="14" Height="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                                <TextBlock Text="Подключить аккаунт Deadlocker" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="1" Command="{Binding DisconnectDeadlockerCommand}"
+                                                IsVisible="{Binding IsDeadlockerAuthenticated}"
+                                                Height="36" Margin="8,0,0,0" Padding="12,0" CornerRadius="6"
+                                                Background="#2A1818" BorderBrush="#4A2525" BorderThickness="1"
+                                                Foreground="#F87171" FontSize="11" Cursor="Hand">
+                                            <TextBlock Text="Отключить" VerticalAlignment="Center" />
+                                        </Button>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

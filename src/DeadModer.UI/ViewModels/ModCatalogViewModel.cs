@@ -8,11 +8,15 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.IO;
+using System.Text.Json;
 using DeadModer.Core.Entities;
 using DeadModer.Core.Enums;
 using DeadModer.Core.Interfaces.Data;
 using DeadModer.Core.Interfaces.Services;
+using DeadModer.Core.Models;
 using DeadModer.Core.Models.GameBanana;
+using DeadModer.UI.Services;
 using Microsoft.Extensions.Logging;
 
 namespace DeadModer.UI.ViewModels;
@@ -99,7 +103,7 @@ public partial class ModCatalogViewModel : ViewModelBase
     private string _reviewsCountSummary = string.Empty;
 
     /// <summary>
-    /// Флаг успешной авторизации или симуляции аккаунта на сайтах модов.
+    /// Флаг успешной привязки аккаунтов на сайтах модов (GameBanana / Deadlocker).
     /// </summary>
     [ObservableProperty]
     private bool _isUserAuthenticated = false;
@@ -110,15 +114,73 @@ public partial class ModCatalogViewModel : ViewModelBase
     [ObservableProperty]
     private bool _unlockRestrictedMods = false;
 
+    [ObservableProperty]
+    private bool _isGameBananaLinked = false;
+
+    [ObservableProperty]
+    private string _gameBananaUser = string.Empty;
+
+    [ObservableProperty]
+    private bool _isDeadlockerLinked = false;
+
+    [ObservableProperty]
+    private string _deadlockerUser = string.Empty;
+
+    [ObservableProperty]
+    private string _newCommentText = string.Empty;
+
+    [ObservableProperty]
+    private int _newCommentRatingIndex = 0; // 0: 5/5, 1: 4/5, 2: 3/5, 3: 2/5, 4: 1/5
+
+    [ObservableProperty]
+    private string _commentStatusMessage = string.Empty;
+
+    public string ActiveCommentAuthor
+    {
+        get
+        {
+            if (DetailedMod != null && (DetailedMod.SourceSite == "Deadlocker" || DetailedMod.Id.StartsWith("dl_")) && IsDeadlockerLinked && !string.IsNullOrWhiteSpace(DeadlockerUser))
+                return DeadlockerUser;
+            if (IsGameBananaLinked && !string.IsNullOrWhiteSpace(GameBananaUser))
+                return GameBananaUser;
+            if (IsDeadlockerLinked && !string.IsNullOrWhiteSpace(DeadlockerUser))
+                return DeadlockerUser;
+            return Loc.IsEnglish ? "Deadlock Player" : "Игрок Deadlock";
+        }
+    }
+
+    public string ActiveCommentSiteTag
+    {
+        get
+        {
+            if (DetailedMod != null && (DetailedMod.SourceSite == "Deadlocker" || DetailedMod.Id.StartsWith("dl_")) && IsDeadlockerLinked)
+                return "Deadlocker.net";
+            if (IsGameBananaLinked)
+                return "GameBanana";
+            if (IsDeadlockerLinked)
+                return "Deadlocker.net";
+            return Loc.IsEnglish ? "Community" : "Сообщество";
+        }
+    }
+
+    public string ActiveAuthorDisplay
+    {
+        get
+        {
+            if (IsGameBananaLinked || IsDeadlockerLinked)
+            {
+                return Loc.IsEnglish
+                    ? $"Author: {ActiveCommentAuthor} ({ActiveCommentSiteTag})"
+                    : $"От имени: {ActiveCommentAuthor} ({ActiveCommentSiteTag})";
+            }
+            return Loc.IsEnglish ? "Author: Guest (Not linked)" : "От имени: Гость (без привязки)";
+        }
+    }
+
     /// <summary>
     /// Callback открытия диалога управления аккаунтами.
     /// </summary>
     public Action? OnRequestOpenAccounts { get; set; }
-
-    /// <summary>
-    /// Callback мгновенной симуляции аккаунта в 1 клик.
-    /// </summary>
-    public Func<Task>? OnQuickSimulateRequested { get; set; }
 
     [RelayCommand]
     public void OpenAccounts()
@@ -126,13 +188,19 @@ public partial class ModCatalogViewModel : ViewModelBase
         OnRequestOpenAccounts?.Invoke();
     }
 
-    [RelayCommand]
-    public async Task QuickSimulateAccountAsync()
+    /// <summary>
+    /// Установить данные привязанных аккаунтов сайтов.
+    /// </summary>
+    public void SetUserAccount(bool isGameBananaLinked, string gbUser, bool isDeadlockerLinked, string dlUser)
     {
-        if (OnQuickSimulateRequested != null)
-        {
-            await OnQuickSimulateRequested.Invoke();
-        }
+        IsGameBananaLinked = isGameBananaLinked;
+        GameBananaUser = gbUser ?? string.Empty;
+        IsDeadlockerLinked = isDeadlockerLinked;
+        DeadlockerUser = dlUser ?? string.Empty;
+
+        OnPropertyChanged(nameof(ActiveCommentAuthor));
+        OnPropertyChanged(nameof(ActiveCommentSiteTag));
+        OnPropertyChanged(nameof(ActiveAuthorDisplay));
     }
 
     /// <summary>
@@ -1087,6 +1155,11 @@ public partial class ModCatalogViewModel : ViewModelBase
         DetailedMod = mod;
         SelectedDetailTab = 0;
         CurrentScreenshotIndex = 0;
+        CommentStatusMessage = string.Empty;
+        NewCommentText = string.Empty;
+        OnPropertyChanged(nameof(ActiveCommentAuthor));
+        OnPropertyChanged(nameof(ActiveCommentSiteTag));
+        OnPropertyChanged(nameof(ActiveAuthorDisplay));
 
         DetailedScreenshots.Clear();
         if (mod.PreviewBitmap != null)
@@ -1210,23 +1283,174 @@ public partial class ModCatalogViewModel : ViewModelBase
         LoadModReviews(mod);
     }
 
+    private static readonly string UserReviewsFilePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "DeadModer",
+        "user_reviews.json");
+
+    private readonly Dictionary<string, List<UserModReviewRecord>> _userReviewsCache = new(StringComparer.OrdinalIgnoreCase);
+    private bool _userReviewsLoaded = false;
+
+    private void EnsureUserReviewsLoaded()
+    {
+        if (_userReviewsLoaded) return;
+        _userReviewsLoaded = true;
+
+        try
+        {
+            if (File.Exists(UserReviewsFilePath))
+            {
+                var json = File.ReadAllText(UserReviewsFilePath);
+                var records = JsonSerializer.Deserialize<List<UserModReviewRecord>>(json);
+                if (records != null)
+                {
+                    foreach (var r in records)
+                    {
+                        if (!_userReviewsCache.TryGetValue(r.ModId, out var list))
+                        {
+                            list = new List<UserModReviewRecord>();
+                            _userReviewsCache[r.ModId] = list;
+                        }
+                        list.Add(r);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Не удалось загрузить локальные отзывы пользователей");
+        }
+    }
+
+    private async Task SaveUserReviewsAsync()
+    {
+        try
+        {
+            var allRecords = _userReviewsCache.Values.SelectMany(x => x).ToList();
+            var dir = Path.GetDirectoryName(UserReviewsFilePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            var json = JsonSerializer.Serialize(allRecords, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(UserReviewsFilePath, json);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Не удалось сохранить локальные отзывы пользователей");
+        }
+    }
+
+    [RelayCommand]
+    public async Task PostCommentAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewCommentText))
+        {
+            CommentStatusMessage = Loc.IsEnglish ? "Please enter your review text" : "Введите текст отзыва";
+            return;
+        }
+
+        if (DetailedMod == null) return;
+
+        double rating = NewCommentRatingIndex switch
+        {
+            0 => 5.0,
+            1 => 4.0,
+            2 => 3.0,
+            3 => 2.0,
+            4 => 1.0,
+            _ => 5.0
+        };
+
+        var author = ActiveCommentAuthor;
+        var siteTag = ActiveCommentSiteTag;
+        var title = $"{siteTag} • Автор комментария";
+
+        var record = new UserModReviewRecord
+        {
+            ModId = DetailedMod.Id,
+            AuthorName = author,
+            AuthorTitle = title,
+            Content = NewCommentText.Trim(),
+            Rating = rating,
+            DateAdded = DateTime.UtcNow
+        };
+
+        EnsureUserReviewsLoaded();
+        if (!_userReviewsCache.TryGetValue(DetailedMod.Id, out var list))
+        {
+            list = new List<UserModReviewRecord>();
+            _userReviewsCache[DetailedMod.Id] = list;
+        }
+        list.Insert(0, record);
+
+        var vm = new ModReviewViewModel
+        {
+            AuthorName = record.AuthorName,
+            AuthorTitle = record.AuthorTitle,
+            Content = record.Content,
+            Rating = record.Rating,
+            DateFormatted = Loc.IsEnglish ? "Just now" : "Только что"
+        };
+
+        DetailedReviews.Insert(0, vm);
+        ReviewsCountSummary = $"({DetailedReviews.Count})";
+
+        NewCommentText = string.Empty;
+        CommentStatusMessage = Loc.IsEnglish ? "Review submitted successfully!" : "Отзыв успешно добавлен!";
+
+        await SaveUserReviewsAsync();
+    }
+
     private void LoadModReviews(ModCardViewModel mod)
     {
         DetailedReviews.Clear();
         ReviewsCountSummary = string.Empty;
 
+        // Загружаем локальные отзывы пользователей
+        EnsureUserReviewsLoaded();
+        var localReviews = new List<ModReviewViewModel>();
+        if (_userReviewsCache.TryGetValue(mod.Id, out var savedReviews))
+        {
+            foreach (var r in savedReviews)
+            {
+                localReviews.Add(new ModReviewViewModel
+                {
+                    AuthorName = r.AuthorName,
+                    AuthorTitle = r.AuthorTitle,
+                    Content = r.Content,
+                    Rating = r.Rating,
+                    DateFormatted = (DateTime.UtcNow - r.DateAdded).TotalHours < 1
+                        ? (Loc.IsEnglish ? "Just now" : "Только что")
+                        : r.DateAdded.ToString("dd.MM.yyyy")
+                });
+            }
+        }
+
+        foreach (var lr in localReviews)
+        {
+            DetailedReviews.Add(lr);
+        }
+        if (DetailedReviews.Count > 0)
+        {
+            ReviewsCountSummary = $"({DetailedReviews.Count})";
+        }
+
         var match = Regex.Match(mod.Id, @"\d+");
         if (!match.Success || !long.TryParse(match.Value, out var gbId))
         {
-            DetailedReviews.Add(new ModReviewViewModel
+            if (DetailedReviews.Count == 0)
             {
-                AuthorName = "Deadlock Community",
-                AuthorTitle = "Проверено модерацией",
-                Content = "Мод проверен и совместим с текущей версией Deadlock. Установка в папку addons через gameinfo.gi поддерживается автоматически.",
-                DateFormatted = "Актуально",
-                Rating = mod.Rating > 0 ? mod.Rating : 5.0
-            });
-            ReviewsCountSummary = "(1)";
+                DetailedReviews.Add(new ModReviewViewModel
+                {
+                    AuthorName = "Deadlock Community",
+                    AuthorTitle = "Проверено модерацией",
+                    Content = "Мод проверен и совместим с текущей версией Deadlock. Установка в папку addons через gameinfo.gi поддерживается автоматически.",
+                    DateFormatted = "Актуально",
+                    Rating = mod.Rating > 0 ? mod.Rating : 5.0
+                });
+            }
+            ReviewsCountSummary = $"({DetailedReviews.Count})";
             return;
         }
 
@@ -1245,6 +1469,11 @@ public partial class ModCatalogViewModel : ViewModelBase
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     DetailedReviews.Clear();
+                    // Сначала пользовательские отзывы
+                    foreach (var lr in localReviews)
+                    {
+                        DetailedReviews.Add(lr);
+                    }
                     foreach (var vm in reviewVms)
                     {
                         DetailedReviews.Add(vm);
@@ -1256,7 +1485,7 @@ public partial class ModCatalogViewModel : ViewModelBase
                         {
                             AuthorName = "Deadlock Community",
                             AuthorTitle = "Проверено модерацией",
-                            Content = "Отзывов на GameBanana пока нет. Мод протестирован и готов к установке через Source 2 VPK менеджер DeadModer.",
+                            Content = "Отзывов на сайте пока нет. Напишите свой первый комментарий к этому моду выше!",
                             DateFormatted = "Актуально",
                             Rating = mod.Rating > 0 ? mod.Rating : 5.0
                         });
