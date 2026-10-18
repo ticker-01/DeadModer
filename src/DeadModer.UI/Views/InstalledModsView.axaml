@@ -1,0 +1,209 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DeadModer.UI.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="950" d:DesignHeight="750"
+             x:Class="DeadModer.UI.Views.InstalledModsView"
+             x:DataType="vm:InstalledModsViewModel"
+             Background="Transparent">
+
+    <Design.DataContext>
+        <vm:InstalledModsViewModel />
+    </Design.DataContext>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24" Spacing="20">
+            <!-- ВЕРХНЯЯ СВОДКА И СТАТИСТИКА -->
+            <Border Background="#75111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="10" Padding="24,20">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0" Spacing="6" VerticalAlignment="Center">
+                        <!-- Заголовок страницы -->
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource IconMyMods}" Width="18" Height="18" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[MyMods_Title]}" FontSize="22" FontWeight="Black" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Loc[MyMods_Subtitle]}" FontSize="12" Foreground="#858EA0" VerticalAlignment="Center" />
+                        
+                        <!-- ПЛАШКИ СТАТИСТИКИ -->
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,14,0,0" VerticalAlignment="Center">
+                            <!-- Всего -->
+                            <Border Background="#121624" BorderBrush="#1F283C" BorderThickness="1" CornerRadius="6" Padding="16,10" MinWidth="110">
+                                <StackPanel VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock Text="{Binding Loc[Stat_Total]}" FontSize="10" Foreground="#858EA0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding TotalInstalledCount}" FontWeight="Bold" FontSize="18" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Активно -->
+                            <Border Background="#10251B" BorderBrush="#1E442F" BorderThickness="1" CornerRadius="6" Padding="16,10" MinWidth="110">
+                                <StackPanel VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock Text="{Binding Loc[Stat_Active]}" FontSize="10" Foreground="#4ADE80" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding EnabledCount}" FontWeight="Bold" FontSize="18" Foreground="#4ADE80" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Занято места -->
+                            <Border Background="#121624" BorderBrush="#1F283C" BorderThickness="1" CornerRadius="6" Padding="16,10" MinWidth="120">
+                                <StackPanel VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock Text="{Binding Loc[Stat_Storage]}" FontSize="10" Foreground="#858EA0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding TotalStorageUsedFormatted}" FontWeight="Bold" FontSize="18" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- КНОПКИ ДЕЙСТВИЙ (ОТКРЫТЬ ADDONS И СИНХРОНИЗИРОВАТЬ) -->
+                    <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center">
+                        <Button Command="{Binding OpenAddonsFolderCommand}"
+                                Height="36" Padding="18,0" CornerRadius="6"
+                                BorderBrush="#25324A" BorderThickness="1"
+                                Background="#141926" Foreground="#CBD5E1" FontSize="11" FontWeight="SemiBold"
+                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconFolder}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Loc[Btn_OpenAddons]}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding SyncAddonsFolderCommand}"
+                                Height="36" Padding="18,0" CornerRadius="6"
+                                BorderThickness="0"
+                                Background="#2563EB" Foreground="#FFFFFF" FontSize="11" FontWeight="Bold"
+                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconRefresh}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Loc[Btn_Sync]}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ПАНЕЛЬ МАССОВЫХ ДЕЙСТВИЙ -->
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" Text="{Binding Loc[MyMods_Title]}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Command="{Binding ToggleAllModsCommand}" 
+                            Height="30" Padding="14,0" CornerRadius="6"
+                            BorderBrush="#1E442F" BorderThickness="1"
+                            Background="#10251B" Foreground="#4ADE80" FontSize="11" FontWeight="SemiBold"
+                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand">
+                        <Button.CommandParameter><x:Boolean>True</x:Boolean></Button.CommandParameter>
+                        <TextBlock Text="{Binding Loc[Btn_EnableAll]}" VerticalAlignment="Center" />
+                    </Button>
+                    <Button Command="{Binding ToggleAllModsCommand}" 
+                            Height="30" Padding="14,0" CornerRadius="6"
+                            BorderBrush="#3B1C22" BorderThickness="1"
+                            Background="#1E1216" Foreground="#F87171" FontSize="11" FontWeight="SemiBold"
+                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand">
+                        <Button.CommandParameter><x:Boolean>False</x:Boolean></Button.CommandParameter>
+                        <TextBlock Text="{Binding Loc[Btn_DisableAll]}" VerticalAlignment="Center" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- СПИСОК УСТАНОВЛЕННЫХ МОДОВ -->
+            <ItemsControl ItemsSource="{Binding InstalledMods}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#75111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,8">
+                            <Border.Styles>
+                                <Style Selector="Border:pointerover">
+                                    <Setter Property="Background" Value="#90161C2C" />
+                                    <Setter Property="BorderBrush" Value="#2A3750" />
+                                </Style>
+                            </Border.Styles>
+
+                            <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto, Auto, Auto">
+                                <!-- Индикатор формата VPK -->
+                                <Border Grid.Column="0" Width="38" Height="38" Background="#161B28" CornerRadius="6" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <TextBlock Text="VPK" FontWeight="Black" FontSize="11" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+
+                                <!-- Название, описание и версия -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                        <Border Background="#161B28" BorderBrush="#202A3C" BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Version, StringFormat='{}v{0}'}" FontSize="10" Foreground="#858EA0" VerticalAlignment="Center" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="360" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Дата установки -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="16,0">
+                                    <TextBlock Text="{Binding Loc[Col_Date]}" FontSize="9" Foreground="#555E70" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding DateFormatted}" FontSize="11" Foreground="#858EA0" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Размер файла -->
+                                <StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="16,0">
+                                    <TextBlock Text="{Binding Loc[Col_Size]}" FontSize="9" Foreground="#555E70" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding FormattedSize}" FontSize="11" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Переключатель Вкл/Выкл -->
+                                <Button Grid.Column="4" 
+                                        Command="{Binding InstallOrToggleCommand}"
+                                        Height="28" Padding="14,0" CornerRadius="6"
+                                        FontSize="11" FontWeight="SemiBold"
+                                        VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                        Classes.enabled="{Binding IsEnabled}"
+                                        Classes.disabled="{Binding !IsEnabled}"
+                                        VerticalAlignment="Center" Margin="12,0" Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button.enabled">
+                                            <Setter Property="Background" Value="#10251B" />
+                                            <Setter Property="BorderBrush" Value="#1E442F" />
+                                            <Setter Property="BorderThickness" Value="1" />
+                                            <Setter Property="Foreground" Value="#4ADE80" />
+                                        </Style>
+                                        <Style Selector="Button.disabled">
+                                            <Setter Property="Background" Value="#181D2A" />
+                                            <Setter Property="BorderBrush" Value="#253046" />
+                                            <Setter Property="BorderThickness" Value="1" />
+                                            <Setter Property="Foreground" Value="#858EA0" />
+                                        </Style>
+                                    </Button.Styles>
+                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource IconCheck}" Width="10" Height="10" Foreground="#4ADE80" IsVisible="{Binding IsEnabled}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding ActionButtonText}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Кнопка выбора для инспектора / инфо -->
+                                <Button Grid.Column="5"
+                                        Command="{Binding SelectCommand}"
+                                        Height="28" Padding="12,0" CornerRadius="6"
+                                        Background="#141926" BorderBrush="#202A3C" BorderThickness="1"
+                                        Foreground="#858EA0" FontSize="11"
+                                        VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                        VerticalAlignment="Center" Margin="0,0,8,0" Cursor="Hand">
+                                    <TextBlock Text="Инфо" VerticalAlignment="Center" />
+                                </Button>
+
+                                <!-- КНОПКА УДАЛИТЬ МОД -->
+                                <Button Grid.Column="6"
+                                        Command="{Binding $parent[UserControl].((vm:InstalledModsViewModel)DataContext).DeleteModCommand}"
+                                        CommandParameter="{Binding}"
+                                        Height="28" Padding="10,0" CornerRadius="6"
+                                        Background="#221216" BorderBrush="#4A1E24" BorderThickness="1"
+                                        Foreground="#F87171" FontSize="11" FontWeight="SemiBold"
+                                        VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                        VerticalAlignment="Center" Cursor="Hand"
+                                        ToolTip.Tip="Удалить файл мода (.vpk) из игры">
+                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                        <PathIcon Data="{StaticResource IconTrash}" Width="11" Height="11" Foreground="#F87171" VerticalAlignment="Center" />
+                                        <TextBlock Text="Удалить" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

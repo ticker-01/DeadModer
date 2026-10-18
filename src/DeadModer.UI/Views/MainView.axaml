@@ -1,0 +1,339 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DeadModer.UI.ViewModels"
+             xmlns:views="using:DeadModer.UI.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+             x:Class="DeadModer.UI.Views.MainView"
+             x:DataType="vm:MainWindowViewModel"
+             Background="#0A0C12">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="vm:HomeViewModel">
+            <views:HomeView />
+        </DataTemplate>
+        <DataTemplate DataType="vm:ModCatalogViewModel">
+            <views:ModCatalogView />
+        </DataTemplate>
+        <DataTemplate DataType="vm:InstalledModsViewModel">
+            <views:InstalledModsView />
+        </DataTemplate>
+        <DataTemplate DataType="vm:HeroesViewModel">
+            <views:HeroesView />
+        </DataTemplate>
+        <DataTemplate DataType="vm:SettingsViewModel">
+            <views:SettingsView />
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <Grid>
+        <!-- 1. ФОНОВОЕ АТМОСФЕРНОЕ ИЗОБРАЖЕНИЕ ГОРОДА DEADLOCK (FONE_1.PNG) -->
+        <Image Source="{Binding CurrentBackgroundImage}" Stretch="UniformToFill" Opacity="0.45" />
+
+        <!-- 2. МЯГКИЙ РАДИАЛЬНЫЙ ВИНОГРАДНЫЙ ГРАДИЕНТ (НЕ ПЕРЕКРЫВАЕТ АРТЫ, СОХРАНЯЕТ КОНТРАСТ) -->
+        <Border>
+            <Border.Background>
+                <RadialGradientBrush Center="50%,40%" GradientOrigin="50%,40%" RadiusX="75%" RadiusY="75%">
+                    <GradientStop Offset="0.0" Color="#250A0D15" />
+                    <GradientStop Offset="0.6" Color="#70080A12" />
+                    <GradientStop Offset="1.0" Color="#B506080E" />
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <Grid RowDefinitions="56, *">
+            <!-- 3. ВЕРХНИЙ ХЕДЕР ПРИЛОЖЕНИЯ (DEADMODER HEADER) -->
+            <Border Grid.Row="0" Background="#700A0D15" BorderBrush="#1C2436" BorderThickness="0,0,0,1" Padding="20,0">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <!-- Логотип приложения Deadlock -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Border Width="30" Height="30" Background="#141A28" BorderBrush="#25324A" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="{StaticResource IconCrosshair}" Width="16" Height="16" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="1">
+                            <TextBlock Text="{Binding Loc[App_Title]}" FontWeight="Black" FontSize="14" LetterSpacing="2.5" Foreground="#FFFFFF" />
+                            <TextBlock Text="{Binding Loc[App_Subtitle]}" FontSize="10" Foreground="#717A8C" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Статус игры, профиль, настройки и язык -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <!-- Индикатор статуса Deadlock -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,6,0">
+                            <PathIcon Data="{StaticResource IconCheckCircle}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding GameStatusText}" FontSize="12" Foreground="#CBD5E1" VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Кнопка запуска Deadlock через Steam -->
+                        <Button Command="{Binding LaunchDeadlockCommand}"
+                                Height="32" Padding="14,0" CornerRadius="6"
+                                BorderBrush="#22543D" BorderThickness="1"
+                                Background="#15803D" Foreground="#FFFFFF"
+                                FontSize="11" FontWeight="Bold" Cursor="Hand"
+                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconPlay}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Loc[Btn_LaunchGame]}" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Переключатель языка RU / EN -->
+                        <Button Command="{Binding ToggleLanguageCommand}"
+                                Height="32" Padding="10,0" CornerRadius="6"
+                                BorderBrush="#1E273A" BorderThickness="1"
+                                Background="#121622" Foreground="#FFFFFF"
+                                FontSize="11" FontWeight="Bold" Cursor="Hand"
+                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconTranslate}" Width="12" Height="12" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="RU" Classes.active="{Binding Loc.IsRussian}" Classes.inactive="{Binding !Loc.IsRussian}" VerticalAlignment="Center">
+                                    <TextBlock.Styles>
+                                        <Style Selector="TextBlock.active"><Setter Property="Foreground" Value="#FFFFFF" /><Setter Property="FontWeight" Value="Bold" /></Style>
+                                        <Style Selector="TextBlock.inactive"><Setter Property="Foreground" Value="#64748B" /></Style>
+                                    </TextBlock.Styles>
+                                </TextBlock>
+                                <TextBlock Text="/" Foreground="#475569" VerticalAlignment="Center" />
+                                <TextBlock Text="EN" Classes.active="{Binding Loc.IsEnglish}" Classes.inactive="{Binding !Loc.IsEnglish}" VerticalAlignment="Center">
+                                    <TextBlock.Styles>
+                                        <Style Selector="TextBlock.active"><Setter Property="Foreground" Value="#FFFFFF" /><Setter Property="FontWeight" Value="Bold" /></Style>
+                                        <Style Selector="TextBlock.inactive"><Setter Property="Foreground" Value="#64748B" /></Style>
+                                    </TextBlock.Styles>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Кнопка профиля / аккаунтов на сайтах модов -->
+                        <Button Command="{Binding OpenAccountsCommand}"
+                                Height="32" Padding="8,0" CornerRadius="6"
+                                BorderBrush="#1E273A" BorderThickness="1"
+                                Background="#121622" Foreground="#FFFFFF"
+                                Cursor="Hand" ToolTip.Tip="Аккаунты и регистрация на GameBanana / Deadlocker"
+                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconAccountCircle}" Width="16" Height="16" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding UserDisplayName}" FontSize="11" FontWeight="SemiBold" Foreground="#E2E8F0" VerticalAlignment="Center"
+                                           IsVisible="{Binding HasLinkedAccount}" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Иконка настроек -->
+                        <Button Command="{Binding NavigateCommand}"
+                                Width="32" Height="32" Padding="0" Background="#121622" BorderBrush="#1E273A" BorderThickness="1" CornerRadius="6"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Cursor="Hand">
+                            <Button.CommandParameter>
+                                <x:Static Member="vm:NavigationTab.Settings" />
+                            </Button.CommandParameter>
+                            <PathIcon Data="{StaticResource IconSettings}" Width="15" Height="15" Foreground="#FFFFFF" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 4. ОСНОВНОЙ КОНТЕНТ (ЛЕВЫЙ САЙДБАР И ПОЛНОРАЗМЕРНЫЙ ЭКРАН) -->
+            <Grid Grid.Row="1" ColumnDefinitions="210, *">
+
+                <!-- 4.1 ЛЕВЫЙ САЙДБАР (ВЕКТОРНЫЕ ИКОНКИ GOOGLE, БЛОК DEADLOCK ВНИЗУ) -->
+                <Border Grid.Column="0" Background="#75090C14" BorderBrush="#1C2436" BorderThickness="0,0,1,0">
+                    <Grid RowDefinitions="*, Auto">
+                        <!-- Элементы навигации -->
+                        <StackPanel Grid.Row="0" Margin="12,16" Spacing="4">
+                            <!-- Главная -->
+                            <Button Classes="sidebarNav" Classes.active="{Binding IsHomeTab}"
+                                    Command="{Binding NavigateCommand}">
+                                <Button.CommandParameter>
+                                    <x:Static Member="vm:NavigationTab.Home" />
+                                </Button.CommandParameter>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{StaticResource IconHome}" Width="16" Height="16" Foreground="#FFFFFF" />
+                                    <TextBlock Text="{Binding Loc[Nav_Home]}" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Моды -->
+                            <Button Classes="sidebarNav" Classes.active="{Binding IsModsTab}"
+                                    Command="{Binding NavigateCommand}">
+                                <Button.CommandParameter>
+                                    <x:Static Member="vm:NavigationTab.Mods" />
+                                </Button.CommandParameter>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{StaticResource IconMods}" Width="16" Height="16" Foreground="#FFFFFF" />
+                                    <TextBlock Text="{Binding Loc[Nav_Mods]}" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Герои -->
+                            <Button Classes="sidebarNav" Classes.active="{Binding IsHeroesTab}"
+                                    Command="{Binding NavigateCommand}">
+                                <Button.CommandParameter>
+                                    <x:Static Member="vm:NavigationTab.Heroes" />
+                                </Button.CommandParameter>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{StaticResource IconHeroes}" Width="16" Height="16" Foreground="#FFFFFF" />
+                                    <TextBlock Text="{Binding Loc[Nav_Heroes]}" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Мои моды -->
+                            <Button Classes="sidebarNav" Classes.active="{Binding IsMyModsTab}"
+                                    Command="{Binding NavigateCommand}">
+                                <Button.CommandParameter>
+                                    <x:Static Member="vm:NavigationTab.MyMods" />
+                                </Button.CommandParameter>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{StaticResource IconMyMods}" Width="16" Height="16" Foreground="#FFFFFF" />
+                                    <TextBlock Text="{Binding Loc[Nav_MyMods]}" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Настройки -->
+                            <Button Classes="sidebarNav" Classes.active="{Binding IsSettingsTab}"
+                                    Command="{Binding NavigateCommand}">
+                                <Button.CommandParameter>
+                                    <x:Static Member="vm:NavigationTab.Settings" />
+                                </Button.CommandParameter>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{StaticResource IconSettings}" Width="16" Height="16" Foreground="#FFFFFF" />
+                                    <TextBlock Text="{Binding Loc[Nav_Settings]}" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Нижний блок Deadlock с круглой эмблемой -->
+                        <Border Grid.Row="1" Margin="14,14" Padding="14,12" Background="#80111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="8">
+                            <StackPanel Spacing="6">
+                                <PathIcon Data="{StaticResource IconCrosshair}" Width="24" Height="24" Foreground="#CBD5E1" HorizontalAlignment="Left" />
+                                <TextBlock Text="Deadlock" FontWeight="Black" FontSize="14" Foreground="#FFFFFF" LetterSpacing="0.8" />
+                                <TextBlock Text="Вдохновлено тобой. Для тебя." FontSize="10" Foreground="#64748B" TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
+                                    <Ellipse Width="6" Height="6" Fill="#4ADE80" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc[App_Version]}" FontSize="10" Foreground="#64748B" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- 4.2 ЦЕНТРАЛЬНЫЙ ДИНАМИЧЕСКИЙ КОНТЕНТ (КАТАЛОГ / ГЕРОИ / МОИ МОДЫ) -->
+                <TransitioningContentControl Grid.Column="1" Content="{Binding CurrentPageViewModel}" />
+            </Grid>
+        </Grid>
+
+        <!-- 5. МОДАЛЬНОЕ ОКНО: АККАУНТЫ И РЕГИСТРАЦИЯ НА САЙТАХ МОДОВ -->
+        <Grid Background="#B0050810" IsVisible="{Binding IsAccountsModalOpen}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Width="500" Background="#111622" BorderBrush="#25324A" BorderThickness="1" CornerRadius="12" Padding="24"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 12 36 #80000000">
+                <StackPanel Spacing="18">
+                    <!-- Заголовок модального окна -->
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Border Width="36" Height="36" Background="#182030" BorderBrush="#2C3B57" BorderThickness="1" CornerRadius="8">
+                                <PathIcon Data="{StaticResource IconAccountCircle}" Width="20" Height="20" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="Аккаунты сайтов модов" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" />
+                                <TextBlock Text="Регистрация и привязка никнеймов для сообщества" FontSize="11" Foreground="#64748B" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Grid.Column="2" Command="{Binding CloseAccountsCommand}"
+                                Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Cursor="Hand">
+                            <PathIcon Data="{StaticResource IconClose}" Width="14" Height="14" Foreground="#94A3B8" />
+                        </Button>
+                    </Grid>
+
+                    <Rectangle Height="1" Fill="#1C2436" Margin="0,-4,0,0" />
+
+                    <!-- Блок GameBanana -->
+                    <Border Background="#141926" BorderBrush="#1F293D" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="GameBanana" FontWeight="Bold" FontSize="13" Foreground="#F59E0B" VerticalAlignment="Center" />
+                                    <Border Background="#1E293B" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                        <TextBlock Text="API v11" FontSize="9" FontWeight="SemiBold" Foreground="#94A3B8" />
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                    <Button Command="{Binding OpenGameBananaRegisterCommand}"
+                                            Height="26" Padding="10,0" CornerRadius="4"
+                                            Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
+                                            Foreground="#F8FAFC" FontSize="10" FontWeight="SemiBold" Cursor="Hand">
+                                        <TextBlock Text="Регистрация ↗" VerticalAlignment="Center" />
+                                    </Button>
+                                    <Button Command="{Binding OpenGameBananaLoginCommand}"
+                                            Height="26" Padding="10,0" CornerRadius="4"
+                                            Background="Transparent" BorderBrush="#334155" BorderThickness="1"
+                                            Foreground="#94A3B8" FontSize="10" Cursor="Hand">
+                                        <TextBlock Text="Войти ↗" VerticalAlignment="Center" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                            <TextBox Text="{Binding GameBananaUsername, Mode=TwoWay}"
+                                     PlaceholderText="Ваш никнейм на GameBanana..."
+                                     Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
+                                     Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Блок Deadlocker.net -->
+                    <Border Background="#141926" BorderBrush="#1F293D" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="Deadlocker.net" FontWeight="Bold" FontSize="13" Foreground="#38BDF8" VerticalAlignment="Center" />
+                                    <Border Background="#1E293B" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                        <TextBlock Text="Сообщество" FontSize="9" FontWeight="SemiBold" Foreground="#94A3B8" />
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                    <Button Command="{Binding OpenDeadlockerCommand}"
+                                            Height="26" Padding="10,0" CornerRadius="4"
+                                            Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
+                                            Foreground="#F8FAFC" FontSize="10" FontWeight="SemiBold" Cursor="Hand">
+                                        <TextBlock Text="Сайт ↗" VerticalAlignment="Center" />
+                                    </Button>
+                                    <Button Command="{Binding OpenDeadlockerGuideCommand}"
+                                            Height="26" Padding="10,0" CornerRadius="4"
+                                            Background="Transparent" BorderBrush="#334155" BorderThickness="1"
+                                            Foreground="#94A3B8" FontSize="10" Cursor="Hand">
+                                        <TextBlock Text="Инструкция ↗" VerticalAlignment="Center" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                            <TextBox Text="{Binding DeadlockerUsername, Mode=TwoWay}"
+                                     PlaceholderText="Ваш никнейм на Deadlocker..."
+                                     Height="34" CornerRadius="6" Background="#0C0F17" BorderBrush="#222C40" BorderThickness="1"
+                                     Foreground="#FFFFFF" FontSize="12" VerticalContentAlignment="Center" Padding="10,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Статус сообщения -->
+                    <TextBlock Text="{Binding AccountsStatusMessage}" Foreground="#4ADE80" FontSize="11" HorizontalAlignment="Center"
+                               IsVisible="{Binding AccountsStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                    <!-- Кнопки управления -->
+                    <Grid ColumnDefinitions="*, 10, Auto, 10, Auto">
+                        <Button Grid.Column="2" Command="{Binding CloseAccountsCommand}"
+                                Height="34" Padding="16,0" CornerRadius="6"
+                                Background="Transparent" BorderBrush="#2D3748" BorderThickness="1"
+                                Foreground="#94A3B8" FontSize="12" Cursor="Hand">
+                            <TextBlock Text="Закрыть" VerticalAlignment="Center" />
+                        </Button>
+                        <Button Grid.Column="4" Command="{Binding SaveAccountsCommand}"
+                                Height="34" Padding="20,0" CornerRadius="6"
+                                Background="#15803D" BorderBrush="#22543D" BorderThickness="1"
+                                Foreground="#FFFFFF" FontWeight="Bold" FontSize="12" Cursor="Hand">
+                            <TextBlock Text="Сохранить" VerticalAlignment="Center" />
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
+

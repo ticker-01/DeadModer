@@ -1,0 +1,370 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DeadModer.UI.ViewModels"
+             xmlns:ctrl="using:DeadModer.UI.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="850"
+             x:Class="DeadModer.UI.Views.HeroesView"
+             x:DataType="vm:HeroesViewModel"
+             Background="Transparent">
+
+    <Design.DataContext>
+        <vm:HeroesViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto, *" Margin="24,18,24,20">
+        <!-- 1. ВЕРХНЯЯ ПАНЕЛЬ: ПОИСК ГЕРОЯ И ФИЛЬТРЫ ПО РОЛЯМ (КАК НА МАКЕТЕ) -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Margin="0,0,0,18">
+            <!-- Поле поиска: [ 🔍 Поиск героя... ] -->
+            <Border Grid.Column="0" Background="#90111522" BorderBrush="#202A3C" BorderThickness="1"
+                    CornerRadius="8" Height="40" Width="300" VerticalAlignment="Center">
+                <Grid ColumnDefinitions="Auto, *">
+                    <PathIcon Grid.Column="0" Data="{StaticResource IconSearch}" Width="15" Height="15"
+                              Foreground="#FFFFFF" Margin="14,0,8,0" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding SearchQuery}"
+                             PlaceholderText="Поиск героя..."
+                             Background="Transparent"
+                             Foreground="#FFFFFF"
+                             BorderThickness="0"
+                             Padding="2,0,10,0"
+                             VerticalContentAlignment="Center"
+                             FontSize="12" />
+                </Grid>
+            </Border>
+
+            <!-- Фильтр-пилюли: [Все герои] [Атакующие] [Защита] [Поддержка] [Контроль] с белыми иконками Google -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Button Classes="pillCategory"
+                        Classes.active="{Binding SelectedRoleFilter, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='All'}"
+                        Command="{Binding FilterRoleCommand}" CommandParameter="All">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource IconCategory}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc[Heroes_RoleAll]}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="pillCategory"
+                        Classes.active="{Binding SelectedRoleFilter, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Assault'}"
+                        Command="{Binding FilterRoleCommand}" CommandParameter="Assault">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource IconFlame}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc[Heroes_RoleAssault]}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="pillCategory"
+                        Classes.active="{Binding SelectedRoleFilter, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Defense'}"
+                        Command="{Binding FilterRoleCommand}" CommandParameter="Defense">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource IconShield}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc[Heroes_RoleDefense]}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="pillCategory"
+                        Classes.active="{Binding SelectedRoleFilter, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Support'}"
+                        Command="{Binding FilterRoleCommand}" CommandParameter="Support">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource IconHealing}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc[Heroes_RoleSupport]}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="pillCategory"
+                        Classes.active="{Binding SelectedRoleFilter, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Control'}"
+                        Command="{Binding FilterRoleCommand}" CommandParameter="Control">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource IconEye}" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc[Heroes_RoleControl]}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- 2. ОСНОВНОЙ КОНТЕНТ: СЕТКА 4х4 СЛЕВА + ИНСПЕКТОР ГЕРОЯ СПРАВА -->
+        <Grid Grid.Row="1" ColumnDefinitions="*, 380">
+            <!-- 2.1 СЕТКА КАРТОЧЕК ПЕРСОНАЖЕЙ (4 КОЛОНКИ х 4 СТРОКИ) -->
+            <Grid Grid.Column="0" RowDefinitions="*, Auto" Margin="0,0,20,0">
+                <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding DisplayedHeroes}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding SelectCommand}"
+                                        Padding="0" Margin="0,0,14,14"
+                                        Background="Transparent" BorderThickness="0"
+                                        HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="Transparent" />
+                                        </Style>
+                                    </Button.Styles>
+
+                                    <!-- КАРТОЧКА ГЕРОЯ (КАК НА МАКЕТЕ) -->
+                                    <Border Width="176" Height="228" CornerRadius="12" ClipToBounds="True"
+                                            Background="#95121624"
+                                            Classes.selectedCard="{Binding IsSelected}"
+                                            BorderBrush="#1E273A"
+                                            BorderThickness="1">
+                                        <Border.Styles>
+                                            <Style Selector="Border:pointerover">
+                                                <Setter Property="Background" Value="#A5182030" />
+                                            </Style>
+                                            <Style Selector="Border.selectedCard">
+                                                <Setter Property="BorderBrush" Value="#FFFFFF" />
+                                                <Setter Property="BorderThickness" Value="2" />
+                                            </Style>
+                                        </Border.Styles>
+
+                                        <Grid RowDefinitions="*, Auto">
+                                            <!-- ОБЛАСТЬ ПОРТРЕТА ГЕРОЯ -->
+                                            <Grid Grid.Row="0">
+                                                <!-- Высококачественный портрет персонажа -->
+                                                <Image Source="{Binding CardBitmap}" Stretch="UniformToFill"
+                                                       IsVisible="{Binding CardBitmap, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                                                <!-- Запасной фон, если картинка еще грузится или это секретная лавка -->
+                                                <Grid Background="#121624" IsVisible="{Binding CardBitmap, Converter={x:Static ObjectConverters.IsNull}}">
+                                                    <!-- Значок для Curiosity Shop -->
+                                                    <PathIcon Data="{StaticResource IconCrosshair}" Width="48" Height="48"
+                                                              Foreground="#2A3750" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              IsVisible="{Binding IsLocked}" />
+                                                </Grid>
+
+                                                <!-- Мягкий градиент затемнения к нижней части карточки -->
+                                                <Border>
+                                                    <Border.Background>
+                                                        <LinearGradientBrush StartPoint="0%,40%" EndPoint="0%,100%">
+                                                            <GradientStop Offset="0.0" Color="#00000000" />
+                                                            <GradientStop Offset="1.0" Color="#EE0E121E" />
+                                                        </LinearGradientBrush>
+                                                    </Border.Background>
+                                                </Border>
+
+                                                <!-- ИНДИКАТОР ВЫБОРА: БЕЛЫЙ КРУГЛЫЙ ЧЕКМАРК В ПРАВОМ ВЕРХНЕМ УГЛУ (КАК НА МАКЕТЕ) -->
+                                                <Border Width="20" Height="20" CornerRadius="10"
+                                                        Background="#FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                        Margin="8" IsVisible="{Binding IsSelected}">
+                                                    <PathIcon Data="{StaticResource IconCheck}" Width="11" Height="11"
+                                                              Foreground="#0A0D15" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- НИЗ КАРТОЧКИ: ИМЯ ГЕРОЯ И РОЛЕВОЙ БЕЙДЖ С ЭМОДЗИ -->
+                                            <StackPanel Grid.Row="1" Margin="10,0,10,10" Spacing="4" VerticalAlignment="Center">
+                                                <!-- Имя героя (жирным капсом) -->
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontWeight="Black" FontSize="12" LetterSpacing="0.6"
+                                                           Foreground="#FFFFFF" TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center" />
+
+                                                <!-- Ролевой бейдж (Векторная иконка Google Material Symbols + текст роли) -->
+                                                <Border Background="#161B28" BorderBrush="#25324A" BorderThickness="0.8"
+                                                        CornerRadius="4" Padding="6,2" HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                        <PathIcon Data="{Binding RoleIconPathData}" Width="10" Height="10"
+                                                                  Foreground="{Binding BadgeColor}" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Role}"
+                                                                   FontSize="10" FontWeight="SemiBold"
+                                                                   Foreground="{Binding BadgeColor}"
+                                                                   VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- ПАГИНАЦИЯ: < 1 2 3 > (КАК НА МАКЕТЕ) -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,12,0,0" VerticalAlignment="Center">
+                    <Button Command="{Binding PrevPageCommand}" Classes="pillPagination" VerticalAlignment="Center">
+                        <TextBlock Text="‹" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                    </Button>
+
+                    <Button Command="{Binding GoToPageCommand}" CommandParameter="1"
+                            Classes="pillPagination" Classes.active="{Binding CurrentPage, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=1}"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="1" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                    </Button>
+
+                    <Button Command="{Binding GoToPageCommand}" CommandParameter="2"
+                            Classes="pillPagination" Classes.active="{Binding CurrentPage, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=2}"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="2" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                    </Button>
+
+                    <Button Command="{Binding NextPageCommand}" Classes="pillPagination" VerticalAlignment="Center">
+                        <TextBlock Text="›" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 2.2 ПРАВАЯ ПАНЕЛЬ: ПОДРОБНЫЙ ИНСПЕКТОР ВЫБРАННОГО ГЕРОЯ (ТОЧНО ПО МАКЕТУ) -->
+            <Border Grid.Column="1" Background="#900E121E" BorderBrush="#1C2436" BorderThickness="1"
+                    CornerRadius="14" ClipToBounds="True">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="0" IsVisible="{Binding SelectedHero, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <!-- АРТ / ВЕРХНИЙ БАННЕР ГЕРОЯ (ТОЧНО ПО СТИЛЮ DEADLOCK) -->
+                        <Border Height="260" Background="#141826" ClipToBounds="True">
+                            <Grid>
+                                <!-- Высококачественный вертикальный арт героя -->
+                                <Image Source="{Binding SelectedHero.FullBitmap}" Stretch="UniformToFill" />
+
+                                <!-- Градиентное затемнение внизу арта -->
+                                <Border IsHitTestVisible="False">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0%,55%" EndPoint="0%,100%">
+                                            <GradientStop Offset="0.0" Color="#00000000" />
+                                            <GradientStop Offset="1.0" Color="#F00E121E" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+
+                                <!-- Ролевой бейдж в правом верхнем углу -->
+                                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12"
+                                        Background="#DD0B0E17" BorderBrush="#25324A" BorderThickness="1"
+                                        CornerRadius="6" Padding="8,4">
+                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                        <PathIcon Data="{Binding SelectedHero.RoleIconPathData}" Width="12" Height="12"
+                                                  Foreground="{Binding SelectedHero.BadgeColor}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding SelectedHero.RoleBadgeText}" FontSize="11" FontWeight="Bold"
+                                                   Foreground="{Binding SelectedHero.BadgeColor}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- ИНФО-БЛОК ПОД АРТОМ ГЕРОЯ -->
+                        <StackPanel Margin="18,12,18,14" Spacing="10">
+                            <!-- Имя и титул героя -->
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{Binding SelectedHero.Title}" FontSize="22" FontWeight="Black"
+                                           Foreground="#FFFFFF" LetterSpacing="1" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding SelectedHero.Epithet}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="#858EA0" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <!-- Описание героя (Лор) -->
+                            <TextBlock Text="{Binding SelectedHero.LoreSummary}" FontSize="11" Foreground="#94A3B8"
+                                       LineHeight="17" TextWrapping="Wrap" VerticalAlignment="Center" />
+
+                            <!-- 5 ИКОНОК СПОСОБНОСТЕЙ В КРУЖОЧКАХ С ПОДПИСЯМИ -->
+                            <ItemsControl ItemsSource="{Binding SelectedHero.Abilities}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" Columns="5" HorizontalAlignment="Stretch" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Spacing="3" HorizontalAlignment="Center">
+                                            <!-- Круглый слот способности с белой векторной иконкой Google Material Symbols -->
+                                            <Border Width="42" Height="42" CornerRadius="21"
+                                                    Background="#141926" BorderBrush="#222C3E" BorderThickness="1.2">
+                                                <PathIcon Data="{Binding IconPathData}" Width="16" Height="16"
+                                                          Foreground="#FFFFFF"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <!-- Подпись (Пассивная, 1, 2, 3, Ульта) -->
+                                            <TextBlock Text="{Binding Slot}" FontSize="10" Foreground="#64748B"
+                                                       FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- БЛОК СТАТИСТИКИ (ЗДОРОВЬЕ, ВЫНОСЛИВОСТЬ, СКОРОСТЬ) С БЕЛЫМИ ИКОНКАМИ GOOGLE -->
+                            <StackPanel Spacing="8">
+                                <!-- Здоровье -->
+                                <Grid ColumnDefinitions="20, 95, 45, *" VerticalAlignment="Center">
+                                    <PathIcon Grid.Column="0" Data="{StaticResource IconHeart}" Width="13" Height="13"
+                                              Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[Heroes_StatHp]}" FontSize="11"
+                                               Foreground="#94A3B8" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding SelectedHero.Hp}" FontSize="11" FontWeight="Bold"
+                                               Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <!-- Прогресс-бар здоровья -->
+                                    <Border Grid.Column="3" Height="5" CornerRadius="2.5" Background="#161C2C" ClipToBounds="True" VerticalAlignment="Center">
+                                        <ProgressBar Value="{Binding SelectedHero.HpPercent}" Minimum="0" Maximum="100"
+                                                      Foreground="#4ADE80" Background="Transparent" BorderThickness="0" Height="5" />
+                                    </Border>
+                                </Grid>
+
+                                <!-- Выносливость -->
+                                <Grid ColumnDefinitions="20, 95, 45, *" VerticalAlignment="Center">
+                                    <PathIcon Grid.Column="0" Data="{StaticResource IconBolt}" Width="13" Height="13"
+                                              Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[Heroes_StatStamina]}" FontSize="11"
+                                               Foreground="#94A3B8" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding SelectedHero.Stamina, StringFormat='{}{0:F1}'}" FontSize="11" FontWeight="Bold"
+                                               Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <!-- Прогресс-бар выносливости -->
+                                    <Border Grid.Column="3" Height="5" CornerRadius="2.5" Background="#161C2C" ClipToBounds="True" VerticalAlignment="Center">
+                                        <ProgressBar Value="{Binding SelectedHero.StaminaPercent}" Minimum="0" Maximum="100"
+                                                      Foreground="#60A5FA" Background="Transparent" BorderThickness="0" Height="5" />
+                                    </Border>
+                                </Grid>
+
+                                <!-- Скорость -->
+                                <Grid ColumnDefinitions="20, 95, 45, *" VerticalAlignment="Center">
+                                    <PathIcon Grid.Column="0" Data="{StaticResource IconSpeed}" Width="13" Height="13"
+                                              Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[Heroes_StatSpeed]}" FontSize="11"
+                                               Foreground="#94A3B8" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding SelectedHero.Speed}" FontSize="11" FontWeight="Bold"
+                                               Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    <!-- Прогресс-бар скорости -->
+                                    <Border Grid.Column="3" Height="5" CornerRadius="2.5" Background="#161C2C" ClipToBounds="True" VerticalAlignment="Center">
+                                        <ProgressBar Value="{Binding SelectedHero.SpeedPercent}" Minimum="0" Maximum="100"
+                                                      Foreground="#94A3B8" Background="Transparent" BorderThickness="0" Height="5" />
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- БЛОК ОСОБЕННОСТЕЙ (ПУНКТЫ МАРКЕРОВ) -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding Loc[Heroes_Features]}" FontSize="11" FontWeight="Bold"
+                                           Foreground="#CBD5E1" VerticalAlignment="Center" />
+                                <ItemsControl ItemsSource="{Binding SelectedHero.Features}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,1" VerticalAlignment="Center">
+                                                <TextBlock Text="•" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding}" FontSize="11" Foreground="#94A3B8"
+                                                           TextWrapping="Wrap" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <!-- КНОПКА ДЕЙСТВИЯ: [ПОСМОТРЕТЬ МОДЫ ГЕРОЯ В КАТАЛОГЕ] -->
+                            <Button Command="{Binding ViewHeroModsCommand}"
+                                    Height="40" Margin="0,6,0,0" CornerRadius="8"
+                                    Background="#E2E8F0" Foreground="#0F172A"
+                                    FontSize="12" FontWeight="Bold" Cursor="Hand"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Data="{StaticResource IconMods}" Width="14" Height="14" Foreground="#0F172A" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc[Heroes_ActionDetails]}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
