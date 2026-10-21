@@ -154,90 +154,102 @@ public sealed class ModCompatibilityService : IModCompatibilityService
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                using var modPak = new Package();
-                using var vanillaPak = new Package();
-
-                try
-                {
-                    modPak.Read(modVpkPath);
-                }
-                catch (Exception ex)
-                {
-                    report.Status = "ERROR";
-                    report.Message = $"Ошибка чтения VPK архива мода: {ex.Message}";
-                    return report;
-                }
-
-                try
-                {
-                    vanillaPak.Read(vanillaPakPath);
-                }
-                catch (Exception ex)
-                {
-                    report.Status = "ERROR";
-                    report.Message = $"Ошибка чтения ванильного архива: {ex.Message}";
-                    return report;
-                }
-
-                var allModEntries = modPak.Entries?.Values.SelectMany(x => x).ToList() ?? [];
-                if (allModEntries.Count == 0)
-                {
-                    report.Status = "SKIPPED (empty)";
-                    report.Message = "VPK архив мода пуст";
-                    return report;
-                }
-
-                bool changed = false;
                 var extractedFiles = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
-                foreach (var entry in allModEntries)
+                // 1. Читаем все файлы из мода и СРАЗУ освобождаем файловый дескриптор Package,
+                // чтобы исключить ошибку блокировки файла (Access to the path is denied) при последующей перезаписи.
+                using (var modPak = new Package())
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var normPath = entry.GetFullPath().Replace('\\', '/').ToLowerInvariant();
-
-                    // 1. Удаление устаревших скриптов, вызывающих сбои после новых патчей
-                    if (StripPatterns.Contains(normPath) || (normPath.StartsWith("scripts/", StringComparison.OrdinalIgnoreCase) && normPath.EndsWith(".vdata_c", StringComparison.OrdinalIgnoreCase)))
+                    try
                     {
-                        changed = true;
-                        report.StrippedScriptsCount++;
-                        continue;
+                        modPak.Read(modVpkPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        report.Status = "ERROR";
+                        report.Message = $"Ошибка чтения VPK архива мода: {ex.Message}";
+                        return report;
                     }
 
-                    modPak.ReadEntry(entry, out var rawData, validateCrc: false);
-
-                    // 2. Обновление скелетов (.vnmskel_c) напрямую из ванильного VPK
-                    if (normPath.EndsWith(".vnmskel_c", StringComparison.OrdinalIgnoreCase) && vanillaIndex.Contains(normPath))
+                    var allModEntries = modPak.Entries?.Values.SelectMany(x => x).ToList() ?? [];
+                    if (allModEntries.Count == 0)
                     {
-                        var vanEntry = vanillaPak.FindEntry(normPath);
-                        if (vanEntry != null)
+                        report.Status = "SKIPPED (empty)";
+                        report.Message = "VPK архив мода пуст";
+                        return report;
+                    }
+
+                    foreach (var entry in allModEntries)
+                    {
+                        modPak.ReadEntry(entry, out var rawData, validateCrc: false);
+                        var normPath = entry.GetFullPath().Replace('\\', '/').ToLowerInvariant();
+                        extractedFiles[normPath] = rawData;
+                    }
+                } // modPak гарантированно освобожден, блокировка с файла modVpkPath снята
+
+                bool changed = false;
+                var filesToKeep = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
+                using (var vanillaPak = new Package())
+                {
+                    try
+                    {
+                        vanillaPak.Read(vanillaPakPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        report.Status = "ERROR";
+                        report.Message = $"Ошибка чтения ванильного архива: {ex.Message}";
+                        return report;
+                    }
+
+                    foreach (var (normPath, rawDataOriginal) in extractedFiles)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var rawData = rawDataOriginal;
+
+                        // 1. Удаление устаревших скриптов, вызывающих сбои после новых патчей Valve
+                        if (StripPatterns.Contains(normPath) || (normPath.StartsWith("scripts/", StringComparison.OrdinalIgnoreCase) && normPath.EndsWith(".vdata_c", StringComparison.OrdinalIgnoreCase)))
                         {
-                            vanillaPak.ReadEntry(vanEntry, out var vanData, validateCrc: false);
-                            if (!rawData.AsSpan().SequenceEqual(vanData))
+                            changed = true;
+                            report.StrippedScriptsCount++;
+                            continue;
+                        }
+
+                        // 2. Обновление скелетов (.vnmskel_c) напрямую из ванильного VPK при совпадении путей
+                        if (normPath.EndsWith(".vnmskel_c", StringComparison.OrdinalIgnoreCase) && vanillaIndex.Contains(normPath))
+                        {
+                            var vanEntry = vanillaPak.FindEntry(normPath);
+                            if (vanEntry != null)
                             {
-                                rawData = vanData;
-                                changed = true;
-                                report.UpdatedSkeletonsCount++;
+                                vanillaPak.ReadEntry(vanEntry, out var vanData, validateCrc: false);
+                                if (!rawData.AsSpan().SequenceEqual(vanData))
+                                {
+                                    rawData = vanData;
+                                    changed = true;
+                                    report.UpdatedSkeletonsCount++;
+                                }
                             }
                         }
-                    }
-                    // 3. Патчинг скомпилированных моделей (.vmdl_c) против актуальных ванильных моделей
-                    else if (normPath.EndsWith(".vmdl_c", StringComparison.OrdinalIgnoreCase) && vanillaIndex.Contains(normPath))
-                    {
-                        var vanEntry = vanillaPak.FindEntry(normPath);
-                        if (vanEntry != null)
+                        // 3. Безопасная синхронизация контроллеров моделей (.vmdl_c) против актуальных ванильных моделей
+                        else if (normPath.EndsWith(".vmdl_c", StringComparison.OrdinalIgnoreCase) && vanillaIndex.Contains(normPath))
                         {
-                            vanillaPak.ReadEntry(vanEntry, out var vanData, validateCrc: false);
-                            var (patchedData, wasPatched) = SyncVmdlBinaryInPlace(rawData, vanData);
-                            if (wasPatched)
+                            var vanEntry = vanillaPak.FindEntry(normPath);
+                            if (vanEntry != null)
                             {
-                                rawData = patchedData;
-                                changed = true;
-                                report.PatchedModelsCount++;
+                                vanillaPak.ReadEntry(vanEntry, out var vanData, validateCrc: false);
+                                var (patchedData, wasPatched) = SyncVmdlBinaryInPlace(rawData, vanData);
+                                if (wasPatched)
+                                {
+                                    rawData = patchedData;
+                                    changed = true;
+                                    report.PatchedModelsCount++;
+                                }
                             }
                         }
-                    }
 
-                    extractedFiles[normPath] = rawData;
+                        filesToKeep[normPath] = rawData;
+                    }
                 }
 
                 if (!changed)
@@ -262,7 +274,7 @@ public sealed class ModCompatibilityService : IModCompatibilityService
                 {
                     using (var newPak = new Package())
                     {
-                        foreach (var (relPath, fileBytes) in extractedFiles)
+                        foreach (var (relPath, fileBytes) in filesToKeep)
                         {
                             newPak.AddFile(relPath, fileBytes);
                         }
@@ -280,7 +292,7 @@ public sealed class ModCompatibilityService : IModCompatibilityService
                 }
 
                 report.Status = "UPDATED";
-                report.Message = $"Мод обновлен: удалено скриптов ({report.StrippedScriptsCount}), обновлено скелетов ({report.UpdatedSkeletonsCount}), исправлено моделей ({report.PatchedModelsCount})";
+                report.Message = $"Мод обновлен: удалено скриптов ({report.StrippedScriptsCount}), обновлено скелетов ({report.UpdatedSkeletonsCount}), адаптировано моделей ({report.PatchedModelsCount})";
                 return report;
             }, cancellationToken);
         }
@@ -418,7 +430,7 @@ public sealed class ModCompatibilityService : IModCompatibilityService
     }
 
     /// <summary>
-    /// Синхронизирует бинарные блоки CTRL, MDAT, DATA и координаты attachments в .vmdl_c.
+    /// Синхронизирует совместимые бинарные блоки управления Source 2 (CTRL) в компилированных моделях (.vmdl_c).
     /// </summary>
     public static (byte[] PatchedData, bool WasPatched) SyncVmdlBinaryInPlace(byte[] modBytes, byte[] vanillaBytes)
     {
@@ -433,51 +445,17 @@ public sealed class ModCompatibilityService : IModCompatibilityService
         byte[] buf = (byte[])modBytes.Clone();
         bool modified = false;
 
-        string[] syncTags = ["CTRL", "MDAT", "DATA"];
-        foreach (var tag in syncTags)
+        // Безопасная синхронизация блока контроллеров костей (CTRL) при совпадении точного размера структуры
+        if (modBlocks.TryGetValue("CTRL", out var modCtrl) && vanBlocks.TryGetValue("CTRL", out var vanCtrl))
         {
-            if (!modBlocks.TryGetValue(tag, out var modEntry) || !vanBlocks.TryGetValue(tag, out var vanEntry))
+            if (modCtrl.Size == vanCtrl.Size && modCtrl.Size > 0)
             {
-                continue;
-            }
-
-            int mOff = modEntry.Offset;
-            int mSize = modEntry.Size;
-            int vOff = vanEntry.Offset;
-            int vSize = vanEntry.Size;
-
-            var vanSlice = vanillaBytes.AsSpan(vOff, vSize);
-            var modSliceSpan = buf.AsSpan(mOff, mSize);
-
-            // 1. Прямая пересадка блока при совпадении размера
-            if (mSize == vSize && !modSliceSpan.SequenceEqual(vanSlice))
-            {
-                if (tag == "CTRL")
+                var modCtrlSlice = buf.AsSpan(modCtrl.Offset, modCtrl.Size);
+                var vanCtrlSlice = vanillaBytes.AsSpan(vanCtrl.Offset, vanCtrl.Size);
+                if (!modCtrlSlice.SequenceEqual(vanCtrlSlice))
                 {
-                    vanSlice.CopyTo(buf.AsSpan(mOff, mSize));
+                    vanCtrlSlice.CopyTo(modCtrlSlice);
                     modified = true;
-                    continue;
-                }
-            }
-
-            // 2. Эвристическая in-place синхронизация 24/28-байтных структур трансформации вблизи имен attachment'ов
-            foreach (var key in AttachmentKeys)
-            {
-                int mIdx = modSliceSpan.IndexOf(key);
-                int vIdx = vanSlice.IndexOf(key);
-                if (mIdx != -1 && vIdx != -1)
-                {
-                    const int window = 64;
-                    if (mIdx + window <= mSize && vIdx + window <= vSize)
-                    {
-                        var modWindow = buf.AsSpan(mOff + mIdx, window);
-                        var vanWindow = vanillaBytes.AsSpan(vOff + vIdx, window);
-                        if (!modWindow.SequenceEqual(vanWindow))
-                        {
-                            vanWindow.CopyTo(modWindow);
-                            modified = true;
-                        }
-                    }
                 }
             }
         }

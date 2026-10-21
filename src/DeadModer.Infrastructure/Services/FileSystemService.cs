@@ -474,8 +474,8 @@ public sealed class FileSystemService : IFileSystemService
             }
         }
 
-        // Поиск первого свободного слота от 01 до 99
-        for (int i = 1; i <= 99; i++)
+        // Поиск первого свободного слота от 02 до 99 (слот 01 зарезервирован базовой игрой: citadel/pak01_dir.vpk)
+        for (int i = 2; i <= 99; i++)
         {
             if (!usedSlots.Contains(i))
             {

@@ -306,6 +306,9 @@ public partial class InstalledModsViewModel : ViewModelBase
 
         try
         {
+            // 1. Автоматически нормализуем нестандартные имена VPK (pakXX_dir.vpk)
+            await _fileSystemService.MigrateNonPakFilesAsync(cancellationToken);
+
             var progress = new Progress<string>(msg =>
             {
                 FixStatusMessage = msg;

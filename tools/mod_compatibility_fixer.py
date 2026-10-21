@@ -8,6 +8,9 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import vpk
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 DEFAULT_GAME_PATHS = [
     Path(r"D:\Program Files\Steam\steamapps\common\Deadlock"),
     Path(r"C:\Program Files (x86)\Steam\steamapps\common\Deadlock"),
@@ -108,29 +111,15 @@ def sync_vmdl_binary_in_place(mod_bytes: bytes, vanilla_bytes: bytes) -> tuple[b
     buf = bytearray(mod_bytes)
     modified = False
 
-    for tag in (b"CTRL", b"MDAT", b"DATA"):
-        if tag not in mod_blocks or tag not in van_blocks:
-            continue
-        m_off, m_size = mod_blocks[tag]
-        v_off, v_size = van_blocks[tag]
-        van_slice = vanilla_bytes[v_off:v_off + v_size]
-
-        if m_size == v_size and buf[m_off:m_off + m_size] != van_slice:
-            if tag == b"CTRL":
-                buf[m_off:m_off + m_size] = van_slice
+    # Safely synchronize CTRL block (bone controllers) when structure size matches exactly
+    if b"CTRL" in mod_blocks and b"CTRL" in van_blocks:
+        m_off, m_size = mod_blocks[b"CTRL"]
+        v_off, v_size = van_blocks[b"CTRL"]
+        if m_size == v_size and m_size > 0:
+            van_slice = vanilla_bytes[v_off : v_off + v_size]
+            if buf[m_off : m_off + m_size] != van_slice:
+                buf[m_off : m_off + m_size] = van_slice
                 modified = True
-                continue
-
-        mod_slice = buf[m_off:m_off + m_size]
-        for key in ATTACHMENT_KEYS:
-            m_idx = mod_slice.find(key)
-            v_idx = van_slice.find(key)
-            if m_idx != -1 and v_idx != -1:
-                window = 64
-                if m_idx + window <= m_size and v_idx + window <= v_size:
-                    if mod_slice[m_idx:m_idx + window] != van_slice[v_idx:v_idx + window]:
-                        buf[m_off + m_idx:m_off + m_idx + window] = van_slice[v_idx:v_idx + window]
-                        modified = True
 
     return bytes(buf), modified
 
