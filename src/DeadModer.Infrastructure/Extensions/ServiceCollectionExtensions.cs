@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISteamLocator, SteamLocator>();
         services.AddSingleton<IGameInfoService, GameInfoService>();
         services.AddSingleton<IFileSystemService, FileSystemService>();
+        services.AddSingleton<IModCompatibilityService, ModCompatibilityService>();
 
         // Регистрация сетевых клиентов и сервисов загрузки
         services.AddHttpClient();

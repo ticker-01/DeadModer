@@ -26,6 +26,7 @@ public partial class InstalledModsViewModel : ViewModelBase
     private readonly IFileSystemService _fileSystemService;
     private readonly IDownloadService _downloadService;
     private readonly ISteamLocator _steamLocator;
+    private readonly IModCompatibilityService? _modCompatibilityService;
     private readonly ILogger<InstalledModsViewModel>? _logger;
     private Action<ModCardViewModel>? _onSelected;
 
@@ -44,6 +45,12 @@ public partial class InstalledModsViewModel : ViewModelBase
     private bool _isLoading = false;
 
     [ObservableProperty]
+    private bool _isFixingMods = false;
+
+    [ObservableProperty]
+    private string? _fixStatusMessage;
+
+    [ObservableProperty]
     private ModCardViewModel? _selectedMod;
 
     public InstalledModsViewModel()
@@ -52,6 +59,7 @@ public partial class InstalledModsViewModel : ViewModelBase
         _fileSystemService = null!;
         _downloadService = null!;
         _steamLocator = null!;
+        _modCompatibilityService = null;
         _logger = null;
 
         var sample1 = new ModCardViewModel { Name = "Better HUD", Author = "Deadmoder", Description = "Clean HUD layout", FormattedSize = "12.4 MB", IsInstalled = true, IsEnabled = true };
@@ -71,6 +79,7 @@ public partial class InstalledModsViewModel : ViewModelBase
         IFileSystemService fileSystemService,
         IDownloadService downloadService,
         ISteamLocator steamLocator,
+        IModCompatibilityService? modCompatibilityService = null,
         Action<ModCardViewModel>? onSelected = null,
         ILogger<InstalledModsViewModel>? logger = null)
     {
@@ -78,6 +87,7 @@ public partial class InstalledModsViewModel : ViewModelBase
         _fileSystemService = fileSystemService ?? throw new ArgumentNullException(nameof(fileSystemService));
         _downloadService = downloadService ?? throw new ArgumentNullException(nameof(downloadService));
         _steamLocator = steamLocator ?? throw new ArgumentNullException(nameof(steamLocator));
+        _modCompatibilityService = modCompatibilityService;
         _onSelected = onSelected;
         _logger = logger;
     }
@@ -283,6 +293,54 @@ public partial class InstalledModsViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Ошибка при открытии папки addons");
+        }
+    }
+
+    [RelayCommand]
+    public async Task FixAllModsAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsFixingMods || _modCompatibilityService == null) return;
+
+        IsFixingMods = true;
+        FixStatusMessage = Loc["FixMods_Running"];
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                FixStatusMessage = msg;
+            });
+
+            var reports = await _modCompatibilityService.RunUpdaterAsync(
+                customDeadlockDir: null,
+                maxWorkers: 8,
+                progress: progress,
+                cancellationToken: cancellationToken);
+
+            if (reports.Count == 0)
+            {
+                FixStatusMessage = Loc["FixMods_NoMods"];
+            }
+            else
+            {
+                int updated = reports.Count(r => r.WasUpdated);
+                int ok = reports.Count(r => r.Status.StartsWith("OK", StringComparison.OrdinalIgnoreCase));
+                int errors = reports.Count(r => !r.IsSuccess);
+                FixStatusMessage = Loc.IsEnglish
+                    ? $"Mod update complete. Updated: {updated}, Up to date: {ok}, Errors: {errors}."
+                    : $"Проверка завершена. Обновлено: {updated}, Без изменений: {ok}, Ошибок: {errors}.";
+            }
+
+            await LoadInstalledModsAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Ошибка при восстановлении совместимости модов");
+            FixStatusMessage = Loc.IsEnglish ? $"Error: {ex.Message}" : $"Ошибка: {ex.Message}";
+        }
+        finally
+        {
+            IsFixingMods = false;
         }
     }
 

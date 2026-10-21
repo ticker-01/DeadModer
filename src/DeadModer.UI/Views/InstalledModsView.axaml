@@ -53,10 +53,10 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- КНОПКИ ДЕЙСТВИЙ (ОТКРЫТЬ ADDONS И СИНХРОНИЗИРОВАТЬ) -->
-                    <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center">
+                    <!-- КНОПКИ ДЕЙСТВИЙ (ОТКРЫТЬ ADDONS, СИНХРОНИЗИРОВАТЬ, ПОЧИНИТЬ МОДЫ) -->
+                    <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
                         <Button Command="{Binding OpenAddonsFolderCommand}"
-                                Height="36" Padding="18,0" CornerRadius="6"
+                                Height="32" Padding="14,0" CornerRadius="6"
                                 BorderBrush="#25324A" BorderThickness="1"
                                 Background="#141926" Foreground="#CBD5E1" FontSize="11" FontWeight="SemiBold"
                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand">
@@ -67,7 +67,7 @@
                         </Button>
 
                         <Button Command="{Binding SyncAddonsFolderCommand}"
-                                Height="36" Padding="18,0" CornerRadius="6"
+                                Height="32" Padding="14,0" CornerRadius="6"
                                 BorderThickness="0"
                                 Background="#2563EB" Foreground="#FFFFFF" FontSize="11" FontWeight="Bold"
                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand">
@@ -76,7 +76,30 @@
                                 <TextBlock Text="{Binding Loc[Btn_Sync]}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
+
+                        <Button Command="{Binding FixAllModsCommand}"
+                                IsEnabled="{Binding !IsFixingMods}"
+                                Height="32" Padding="14,0" CornerRadius="6"
+                                BorderBrush="#0284C7" BorderThickness="1"
+                                Background="#082F49" Foreground="#38BDF8" FontSize="11" FontWeight="Bold"
+                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Cursor="Hand"
+                                ToolTip.Tip="Удалить устаревшие скрипты .vdata_c, синхронизировать скелеты и адаптировать модели .vmdl_c под последний патч Deadlock">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconSparkle}" Width="13" Height="13" Foreground="#38BDF8" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Loc[Btn_FixMods]}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- СТАТУС ВОССТАНОВЛЕНИЯ СОВМЕСТИМОСТИ МОДОВ -->
+            <Border IsVisible="{Binding FixStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="#101E33" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="8" Padding="16,12">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <PathIcon Grid.Column="0" Data="{StaticResource IconSparkle}" Width="15" Height="15" Foreground="#38BDF8" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding FixStatusMessage}" FontSize="12" Foreground="#E0F2FE" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <ProgressBar Grid.Column="2" IsIndeterminate="True" Width="80" Height="4" IsVisible="{Binding IsFixingMods}" VerticalAlignment="Center" Margin="12,0,0,0" />
                 </Grid>
             </Border>
 
