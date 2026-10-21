@@ -903,7 +903,8 @@ public partial class ModCatalogViewModel : ViewModelBase
                         _fileSystemService,
                         _localModRepository,
                         _gameBananaClient,
-                        selected => SelectedModCard = selected);
+                        selected => SelectedModCard = selected,
+                        _deadlockerScraper);
 
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
@@ -920,9 +921,20 @@ public partial class ModCatalogViewModel : ViewModelBase
                 var scraped = await _deadlockerScraper.ScrapeModPageAsync(url);
                 if (scraped != null && !string.IsNullOrEmpty(scraped.DownloadUrl))
                 {
+                    string dlModId = Guid.NewGuid().ToString("N");
+                    if (!string.IsNullOrWhiteSpace(scraped.ModId))
+                    {
+                        dlModId = scraped.ModId;
+                    }
+                    else if (url.Contains("/mods/"))
+                    {
+                        var candidate = url.Split("/mods/").Last().Split('?').First().Trim('/');
+                        if (!string.IsNullOrWhiteSpace(candidate)) dlModId = candidate;
+                    }
+
                     var cached = new CachedModInfo
                     {
-                        Id = $"dl_{Guid.NewGuid():N}",
+                        Id = $"dl_{dlModId}",
                         Name = scraped.Title,
                         ShortDescription = scraped.Description,
                         Author = scraped.Author,
@@ -945,7 +957,8 @@ public partial class ModCatalogViewModel : ViewModelBase
                         _fileSystemService,
                         _localModRepository,
                         _gameBananaClient,
-                        selected => SelectedModCard = selected);
+                        selected => SelectedModCard = selected,
+                        _deadlockerScraper);
 
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
@@ -1230,19 +1243,38 @@ public partial class ModCatalogViewModel : ViewModelBase
         }
 
         // Если это мод с Deadlocker, асинхронно запрашиваем полные детали и скриншоты с API
-        if (mod.Id.StartsWith("dl_") && _deadlockerScraper != null)
+        if ((mod.Id.StartsWith("dl_") || mod.SourceSite == "Deadlocker") && _deadlockerScraper != null)
         {
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    var rawId = mod.Id.StartsWith("dl_") ? mod.Id[3..] : mod.Id;
+                    var rawId = mod.Id.StartsWith("dl_") ? mod.Id[3..] : (mod.Id.StartsWith("dl-") ? mod.Id[3..] : mod.Id);
                     var details = await _deadlockerScraper.GetDeadlockerModDetailsAsync(rawId);
                     if (details != null)
                     {
                         if (string.IsNullOrEmpty(mod.DownloadUrl) && !string.IsNullOrEmpty(details.DownloadUrl))
                         {
                             mod.DownloadUrl = details.DownloadUrl;
+                        }
+                        else if (string.IsNullOrEmpty(mod.DownloadUrl) && details.GameBananaId > 0 && _gameBananaClient != null)
+                        {
+                            var realGbDl = await _gameBananaClient.GetDownloadUrlAsync(details.GameBananaId);
+                            if (!string.IsNullOrWhiteSpace(realGbDl))
+                            {
+                                mod.DownloadUrl = realGbDl;
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(mod.DownloadUrl))
+                        {
+                            var cached = await _cachedModRepository.GetByIdAsync(mod.Id);
+                            if (cached != null)
+                            {
+                                cached.DownloadUrl = mod.DownloadUrl;
+                                cached.HasFiles = true;
+                                await _cachedModRepository.UpsertAsync(cached);
+                            }
                         }
 
                         if (details.Screenshots.Count > 0)

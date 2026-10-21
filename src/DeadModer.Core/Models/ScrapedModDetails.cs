@@ -23,6 +23,8 @@ public class ScrapedModDetails
     public long FileSizeBytes { get; set; } = 12 * 1024 * 1024;
     public bool IsNsfw { get; set; } = false;
     public bool IsFeatured { get; set; } = false;
+    public long GameBananaId { get; set; } = 0;
+    public string ModLink { get; set; } = string.Empty;
     public System.DateTime? CreatedAt { get; set; }
     public List<string> Tags { get; set; } = [];
     public List<string> Screenshots { get; set; } = [];

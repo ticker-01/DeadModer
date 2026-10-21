@@ -25,6 +25,7 @@ public partial class HomeViewModel : ViewModelBase
     private readonly IDownloadService? _downloadService;
     private readonly IFileSystemService? _fileSystemService;
     private readonly IGameBananaClient? _gameBananaClient;
+    private readonly IDeadlockerScraper? _deadlockerScraper;
     private readonly ISteamLocator? _steamLocator;
     private readonly Action<NavigationTab>? _onNavigate;
     private readonly Action<string>? _onFilterHero;
@@ -45,7 +46,7 @@ public partial class HomeViewModel : ViewModelBase
 
     public ObservableCollection<ModCardViewModel> FeaturedMods { get; } = [];
 
-    public HomeViewModel() : this(null, null, null, null, null, null, null, null) { }
+    public HomeViewModel() : this(null, null, null, null, null, null, null, null, null) { }
 
     public HomeViewModel(
         ICachedModRepository? cachedModRepository,
@@ -55,7 +56,8 @@ public partial class HomeViewModel : ViewModelBase
         IGameBananaClient? gameBananaClient,
         ISteamLocator? steamLocator,
         Action<NavigationTab>? onNavigate = null,
-        Action<string>? onFilterHero = null)
+        Action<string>? onFilterHero = null,
+        IDeadlockerScraper? deadlockerScraper = null)
     {
         _cachedModRepository = cachedModRepository;
         _localModRepository = localModRepository;
@@ -65,6 +67,7 @@ public partial class HomeViewModel : ViewModelBase
         _steamLocator = steamLocator;
         _onNavigate = onNavigate;
         _onFilterHero = onFilterHero;
+        _deadlockerScraper = deadlockerScraper;
     }
 
     [RelayCommand]
@@ -103,7 +106,7 @@ public partial class HomeViewModel : ViewModelBase
                 FeaturedMods.Clear();
                 foreach (var m in popular.Take(4))
                 {
-                    if (_downloadService != null && _fileSystemService != null && _gameBananaClient != null)
+                    if (_downloadService != null && _fileSystemService != null)
                     {
                         var card = ModCardViewModel.FromCachedMod(
                             m,
@@ -112,7 +115,8 @@ public partial class HomeViewModel : ViewModelBase
                             _fileSystemService,
                             _localModRepository,
                             _gameBananaClient,
-                            _ => { });
+                            _ => { },
+                            _deadlockerScraper);
                         FeaturedMods.Add(card);
                     }
                 }

@@ -79,7 +79,7 @@ public sealed class FileSystemService : IFileSystemService
         {
             var ext = Path.GetExtension(tempFilePath).ToLowerInvariant();
 
-            if (ext == ".vpk")
+            if (ext == ".vpk" || IsVpkFile(tempFilePath))
             {
                 // Одиночный .vpk файл: строго pakXX_dir.vpk согласно Source 2
                 var destFileName = GetNextAvailablePakSlot(addonsPath);
@@ -335,6 +335,26 @@ public sealed class FileSystemService : IFileSystemService
     public bool UninstallMod(Guid modId)
     {
         return UninstallModAsync(modId).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Проверка сигнатуры файла Valve Source 2 VPK (0x55AA1234).
+    /// </summary>
+    private static bool IsVpkFile(string filePath)
+    {
+        try
+        {
+            if (!File.Exists(filePath)) return false;
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (fs.Length < 4) return false;
+            var header = new byte[4];
+            var read = fs.Read(header, 0, 4);
+            return read == 4 && header[0] == 0x34 && header[1] == 0x12 && header[2] == 0xAA && header[3] == 0x55;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

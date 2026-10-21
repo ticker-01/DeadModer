@@ -27,6 +27,11 @@ public sealed class DownloadService : IDownloadService
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger;
+
+        if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+        {
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36");
+        }
     }
 
     /// <inheritdoc />
@@ -129,13 +134,22 @@ public sealed class DownloadService : IDownloadService
             return packageInfo;
         }
 
-        // Скачан чистый .vpk файл
+        // Скачан чистый .vpk файл. Гарантируем корректное расширение .vpk для Source 2
+        var targetVpkPath = tempDownloadedFile;
+        if (!tempDownloadedFile.EndsWith(".vpk", StringComparison.OrdinalIgnoreCase))
+        {
+            var renamedPath = Path.ChangeExtension(tempDownloadedFile, ".vpk");
+            if (File.Exists(renamedPath)) File.Delete(renamedPath);
+            File.Move(tempDownloadedFile, renamedPath);
+            targetVpkPath = renamedPath;
+        }
+
         return new DownloadedPackageInfo
         {
             SourceUrl = downloadUrl,
-            DownloadedFilePath = tempDownloadedFile,
+            DownloadedFilePath = targetVpkPath,
             ExtractedDirectoryPath = null,
-            VpkFilePaths = [tempDownloadedFile],
+            VpkFilePaths = [targetVpkPath],
             IsArchive = false,
             TotalBytes = fileInfo.Length
         };

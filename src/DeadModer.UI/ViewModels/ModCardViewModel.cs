@@ -10,6 +10,7 @@ using DeadModer.Core.Interfaces.Data;
 using DeadModer.Core.Interfaces.Services;
 using DeadModer.Core.Models;
 using DeadModer.UI.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DeadModer.UI.ViewModels;
 
@@ -154,6 +155,9 @@ public partial class ModCardViewModel : ViewModelBase
         Action<ModCardViewModel>? onSelected = null,
         IDeadlockerScraper? deadlockerScraper = null)
     {
+        deadlockerScraper ??= App.Services?.GetService<IDeadlockerScraper>();
+        gameBananaClient ??= App.Services?.GetService<IGameBananaClient>();
+
         var site = !string.IsNullOrWhiteSpace(cached.SourceSite)
             ? cached.SourceSite
             : (cached.Id.StartsWith("dl_") ? "Deadlocker" : "GameBanana");
@@ -333,26 +337,93 @@ public partial class ModCardViewModel : ViewModelBase
             return;
         }
 
+        var dlScraper = DeadlockerScraper ?? App.Services?.GetService<IDeadlockerScraper>();
+        var gbClient = _gameBananaClient ?? App.Services?.GetService<IGameBananaClient>();
+        var cachedRepo = App.Services?.GetService<ICachedModRepository>();
+
         // Если ссылка еще не была получена заранее, запрашиваем ее автоматически через GameBanana API
-        if (string.IsNullOrWhiteSpace(DownloadUrl) && _gameBananaClient != null && (Id.StartsWith("gb_") || Id.StartsWith("gb-")))
+        if (string.IsNullOrWhiteSpace(DownloadUrl) && gbClient != null && (Id.StartsWith("gb_") || Id.StartsWith("gb-") || SourceSite == "GameBanana"))
         {
             ActionButtonText = Loc["Btn_Downloading"];
-            if (long.TryParse(Id.Replace("gb_", "").Replace("gb-", ""), out var gbId))
+            var cleanId = Id.Replace("gb_", "").Replace("gb-", "");
+            if (long.TryParse(cleanId, out var gbId))
             {
-                DownloadUrl = await _gameBananaClient.GetDownloadUrlAsync(gbId, cancellationToken) ?? string.Empty;
+                DownloadUrl = await gbClient.GetDownloadUrlAsync(gbId, cancellationToken) ?? string.Empty;
             }
         }
 
         // Если ссылка Deadlocker еще не была получена, запрашиваем детали мода с Deadlocker API
-        if (string.IsNullOrWhiteSpace(DownloadUrl) && DeadlockerScraper != null && Id.StartsWith("dl_"))
+        if (string.IsNullOrWhiteSpace(DownloadUrl) && (Id.StartsWith("dl_") || Id.StartsWith("dl-") || SourceSite == "Deadlocker" || Id.StartsWith("mod_")))
         {
             ActionButtonText = Loc["Btn_Downloading"];
-            var rawId = Id.StartsWith("dl_") ? Id[3..] : Id;
-            var details = await DeadlockerScraper.GetDeadlockerModDetailsAsync(rawId, cancellationToken);
+            var rawId = Id.StartsWith("dl_") ? Id[3..] : (Id.StartsWith("dl-") ? Id[3..] : Id);
+
+            ScrapedModDetails? details = null;
+            if (dlScraper != null)
+            {
+                details = await dlScraper.GetDeadlockerModDetailsAsync(rawId, cancellationToken);
+            }
+
             if (details != null && !string.IsNullOrWhiteSpace(details.DownloadUrl))
             {
                 DownloadUrl = details.DownloadUrl;
             }
+
+            // Дополнительный fallback: если downloadUrl все еще пустой, но есть GameBananaId
+            if (string.IsNullOrWhiteSpace(DownloadUrl) && details?.GameBananaId > 0 && gbClient != null)
+            {
+                DownloadUrl = await gbClient.GetDownloadUrlAsync(details.GameBananaId, cancellationToken) ?? string.Empty;
+            }
+
+            // Дополнительный fallback: если downloadUrl все еще пустой, пробуем скрапинг страницы
+            if (string.IsNullOrWhiteSpace(DownloadUrl) && dlScraper != null)
+            {
+                var pageUrl = $"https://deadlocker.net/mods/{rawId}";
+                var scraped = await dlScraper.ScrapeModPageAsync(pageUrl, cancellationToken);
+                if (scraped != null && !string.IsNullOrWhiteSpace(scraped.DownloadUrl))
+                {
+                    DownloadUrl = scraped.DownloadUrl;
+                }
+            }
+        }
+
+        // Валидация ссылки: если ссылка ведет на /dl/{modId} GameBanana, она возвратит 403,
+        // поэтому заменяем ее на реальную ссылку файла через GameBanana API
+        if (!string.IsNullOrWhiteSpace(DownloadUrl) && gbClient != null && DownloadUrl.Contains("gamebanana.com/dl/"))
+        {
+            var parts = DownloadUrl.TrimEnd('/').Split('/');
+            if (parts.Length > 0 && long.TryParse(parts[^1], out var parsedId))
+            {
+                var gbModId = 0L;
+                if (Id.StartsWith("gb_") && long.TryParse(Id[3..], out var gId)) gbModId = gId;
+                if (gbModId == parsedId && gbModId > 0)
+                {
+                    var realFileDl = await gbClient.GetDownloadUrlAsync(gbModId, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(realFileDl))
+                    {
+                        DownloadUrl = realFileDl;
+                    }
+                }
+            }
+        }
+
+        // Если ссылку удалось разрешить, кэшируем ее в базе LiteDB для мгновенного доступа в будущем
+        if (!string.IsNullOrWhiteSpace(DownloadUrl) && cachedRepo != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var cached = await cachedRepo.GetByIdAsync(Id, cancellationToken);
+                    if (cached != null)
+                    {
+                        cached.DownloadUrl = DownloadUrl;
+                        cached.HasFiles = true;
+                        await cachedRepo.UpsertAsync(cached, cancellationToken);
+                    }
+                }
+                catch { /* игнорируем ошибку фонового обновления кэша */ }
+            });
         }
 
         if (string.IsNullOrWhiteSpace(DownloadUrl))

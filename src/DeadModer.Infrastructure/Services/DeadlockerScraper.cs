@@ -23,6 +23,7 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
 {
     private const string ApiBaseUrl = "https://deadlocker.net/api/v1/";
     private readonly HttpClient _httpClient;
+    private readonly IGameBananaClient? _gameBananaClient;
     private readonly ILogger<DeadlockerScraper>? _logger;
     private readonly HtmlParser _htmlParser;
 
@@ -31,9 +32,13 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
         PropertyNameCaseInsensitive = true
     };
 
-    public DeadlockerScraper(HttpClient httpClient, ILogger<DeadlockerScraper>? logger = null)
+    public DeadlockerScraper(
+        HttpClient httpClient, 
+        IGameBananaClient? gameBananaClient = null, 
+        ILogger<DeadlockerScraper>? logger = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _gameBananaClient = gameBananaClient;
         _logger = logger;
         _htmlParser = new HtmlParser();
 
@@ -76,8 +81,8 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 var mainImage = el.TryGetProperty("main_image", out var imgProp) ? imgProp.GetString() : null;
                 var charName = el.TryGetProperty("character_name", out var charProp) ? charProp.GetString() : null;
                 var category = el.TryGetProperty("gb_category", out var catProp) ? catProp.GetString() ?? "Skins" : "Skins";
-                var downloads = el.TryGetProperty("downloads", out var dlProp) && dlProp.TryGetInt32(out var dlVal) ? dlVal : 0;
-                var gbDownloads = el.TryGetProperty("gb_downloads", out var gbdlProp) && gbdlProp.TryGetInt32(out var gbdlVal) ? gbdlVal : 0;
+                var downloads = el.TryGetProperty("downloads", out var dlProp) && dlProp.ValueKind == JsonValueKind.Number && dlProp.TryGetInt32(out var dlVal) ? dlVal : 0;
+                var gbDownloads = el.TryGetProperty("gb_downloads", out var gbdlProp) && gbdlProp.ValueKind == JsonValueKind.Number && gbdlProp.TryGetInt32(out var gbdlVal) ? gbdlVal : 0;
                 var isNsfw = el.TryGetProperty("is_nsfw", out var nsfwProp) &&
                     (nsfwProp.ValueKind == JsonValueKind.True || (nsfwProp.ValueKind == JsonValueKind.Number && nsfwProp.GetInt32() == 1));
                 var isFeatured = el.TryGetProperty("is_featured", out var featProp) &&
@@ -143,11 +148,29 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
     {
         if (string.IsNullOrWhiteSpace(modId)) return null;
 
-        var endpoint = $"https://deadlocker.net/api/v1/mods/{modId}";
+        var normalizedId = modId.Trim();
+        if (normalizedId.StartsWith("dl_")) normalizedId = normalizedId[3..];
+        if (normalizedId.StartsWith("dl-")) normalizedId = normalizedId[3..];
+        if (!normalizedId.StartsWith("mod_") && (long.TryParse(normalizedId, out _) || normalizedId.All(char.IsDigit)))
+        {
+            normalizedId = $"mod_{normalizedId}";
+        }
+
+        var endpoint = $"https://deadlocker.net/api/v1/mods/{normalizedId}";
         try
         {
             var response = await _httpClient.GetAsync(endpoint, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger?.LogWarning("Deadlocker API вернул статус {StatusCode} для {Endpoint}. Попытка HTML скрапинга...", response.StatusCode, endpoint);
+                var scraped = await ScrapeModPageAsync($"https://deadlocker.net/mods/{normalizedId}", cancellationToken);
+                if (scraped != null)
+                {
+                    scraped.ModId = normalizedId;
+                    return scraped;
+                }
+                return null;
+            }
 
             using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
             var root = doc.RootElement;
@@ -159,32 +182,67 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
             var downloadUrl = modEl.TryGetProperty("download_url", out var dlProp) ? dlProp.GetString() ?? "" : "";
             var mainImage = modEl.TryGetProperty("main_image", out var imgProp) ? imgProp.GetString() : null;
             var charName = modEl.TryGetProperty("character_name", out var charProp) ? charProp.GetString() : null;
-            var rating = modEl.TryGetProperty("rating", out var rateProp) && rateProp.TryGetDouble(out var rVal) ? rVal : 4.8;
-            var downloads = modEl.TryGetProperty("downloads", out var downProp) && downProp.TryGetInt32(out var dVal) ? dVal : 1200;
+            var rating = modEl.TryGetProperty("rating", out var rateProp) && rateProp.ValueKind == JsonValueKind.Number && rateProp.TryGetDouble(out var rVal) ? rVal : 4.8;
+            var downloads = modEl.TryGetProperty("downloads", out var downProp) && downProp.ValueKind == JsonValueKind.Number && downProp.TryGetInt32(out var dVal) ? dVal : 1200;
 
             var isNsfw = modEl.TryGetProperty("is_nsfw", out var nsfwProp) &&
                 (nsfwProp.ValueKind == JsonValueKind.True || (nsfwProp.ValueKind == JsonValueKind.Number && nsfwProp.GetInt32() == 1));
             var isFeatured = modEl.TryGetProperty("is_featured", out var featProp) &&
                 (featProp.ValueKind == JsonValueKind.True || (featProp.ValueKind == JsonValueKind.Number && featProp.GetInt32() == 1));
 
-            // Если прямой download_url не указан в ответе, проверяем gamebanana_id или mod_link
+            long gbId = 0;
+            if (modEl.TryGetProperty("gamebanana_id", out var gbIdProp) && gbIdProp.ValueKind == JsonValueKind.Number && gbIdProp.TryGetInt64(out var gbIdVal) && gbIdVal > 0)
+            {
+                gbId = gbIdVal;
+            }
+
+            var modLink = string.Empty;
+            if (modEl.TryGetProperty("mod_link", out var linkProp))
+            {
+                modLink = linkProp.GetString() ?? string.Empty;
+                if (gbId <= 0 && modLink.Contains("gamebanana.com/mods/"))
+                {
+                    var parts = modLink.Split("/mods/");
+                    if (parts.Length > 1 && long.TryParse(parts[1].Split('?')[0].Trim('/'), out var parsedGbId))
+                    {
+                        gbId = parsedGbId;
+                    }
+                }
+            }
+
+            // Если download_url пустой или равен mod ID (GameBanana /dl/{modId} вместо fileId),
+            // разрешаем настоящую прямую ссылку на скачивание файла через GameBanana API
+            var isInvalidModLink = string.IsNullOrWhiteSpace(downloadUrl) ||
+                (gbId > 0 && (downloadUrl.TrimEnd('/').EndsWith($"/dl/{gbId}") || downloadUrl.TrimEnd('/').EndsWith($"/mods/{gbId}")));
+
+            if (isInvalidModLink && gbId > 0 && _gameBananaClient != null)
+            {
+                try
+                {
+                    var realGbDl = await _gameBananaClient.GetDownloadUrlAsync(gbId, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(realGbDl))
+                    {
+                        downloadUrl = realGbDl;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogDebug(ex, "Не удалось получить прямую ссылку через GameBanana API для мода {ModId} (GB ID: {GbId})", normalizedId, gbId);
+                }
+            }
+
+            // Дополнительный fallback: если downloadUrl все еще пустой, пробуем извлечь из веб-страницы мода
             if (string.IsNullOrWhiteSpace(downloadUrl))
             {
-                if (modEl.TryGetProperty("gamebanana_id", out var gbIdProp) && gbIdProp.TryGetInt64(out var gbIdVal) && gbIdVal > 0)
+                if (!string.IsNullOrWhiteSpace(modLink))
                 {
-                    downloadUrl = $"https://gamebanana.com/dl/{gbIdVal}";
+                    var extracted = await ExtractDirectDownloadUrlAsync(modLink, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(extracted)) downloadUrl = extracted;
                 }
-                else if (modEl.TryGetProperty("mod_link", out var linkProp))
+                if (string.IsNullOrWhiteSpace(downloadUrl))
                 {
-                    var link = linkProp.GetString() ?? "";
-                    if (link.Contains("gamebanana.com/mods/"))
-                    {
-                        var parts = link.Split("/mods/");
-                        if (parts.Length > 1 && long.TryParse(parts[1].Split('?')[0].Trim('/'), out var parsedGbId))
-                        {
-                            downloadUrl = $"https://gamebanana.com/dl/{parsedGbId}";
-                        }
-                    }
+                    var extracted = await ExtractDirectDownloadUrlAsync($"https://deadlocker.net/mods/{normalizedId}", cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(extracted)) downloadUrl = extracted;
                 }
             }
 
@@ -202,7 +260,7 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
 
             return new ScrapedModDetails
             {
-                ModId = modId,
+                ModId = normalizedId,
                 Title = title,
                 Description = desc,
                 DownloadUrl = downloadUrl,
@@ -212,12 +270,14 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 DownloadCount = downloads,
                 IsNsfw = isNsfw,
                 IsFeatured = isFeatured,
+                GameBananaId = gbId,
+                ModLink = modLink,
                 Screenshots = screenshots
             };
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger?.LogError(ex, "Ошибка получения деталей мода {ModId} с Deadlocker", modId);
+            _logger?.LogError(ex, "Ошибка получения деталей мода {ModId} с Deadlocker", normalizedId);
             return null;
         }
     }
@@ -332,7 +392,7 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
                 var id = el.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? name.ToLowerInvariant() : name.ToLowerInvariant();
-                var numId = el.TryGetProperty("numeric_id", out var numProp) && numProp.TryGetInt32(out var ni) ? ni : 0;
+                var numId = el.TryGetProperty("numeric_id", out var numProp) && numProp.ValueKind == JsonValueKind.Number && numProp.TryGetInt32(out var ni) ? ni : 0;
                 var cls = el.TryGetProperty("class", out var clsProp) ? clsProp.GetString() ?? "" : "";
                 var image = el.TryGetProperty("image", out var imgProp) ? imgProp.GetString() : null;
                 var icon = el.TryGetProperty("icon", out var iconProp) ? iconProp.GetString() : null;
@@ -340,8 +400,8 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 var descClean = descHtml != null
                     ? Regex.Replace(descHtml, "<.*?>", " ").Replace("&quot;", "\"").Replace("&amp;", "&").Trim()
                     : null;
-                var isLabs = el.TryGetProperty("is_hero_labs", out var labsProp) && labsProp.GetBoolean();
-                var modsCount = el.TryGetProperty("mods_count", out var mcProp) && mcProp.TryGetInt32(out var mc) ? mc : 0;
+                var isLabs = el.TryGetProperty("is_hero_labs", out var labsProp) && labsProp.ValueKind == JsonValueKind.True;
+                var modsCount = el.TryGetProperty("mods_count", out var mcProp) && mcProp.ValueKind == JsonValueKind.Number && mcProp.TryGetInt32(out var mc) ? mc : 0;
 
                 double stamina = 3.0;
                 double speed = 7.0;
@@ -351,17 +411,17 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
                 {
                     if (stats.TryGetProperty("stamina", out var stamProp))
                     {
-                        if (stamProp.TryGetDouble(out var sVal)) stamina = sVal;
+                        if (stamProp.ValueKind == JsonValueKind.Number && stamProp.TryGetDouble(out var sVal)) stamina = sVal;
                         else if (double.TryParse(stamProp.GetString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var sParsed)) stamina = sParsed;
                     }
                     if (stats.TryGetProperty("move_speed", out var spdProp))
                     {
-                        if (spdProp.TryGetDouble(out var spdVal)) speed = spdVal;
+                        if (spdProp.ValueKind == JsonValueKind.Number && spdProp.TryGetDouble(out var spdVal)) speed = spdVal;
                         else if (double.TryParse(spdProp.GetString()?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var spdParsed)) speed = spdParsed;
                     }
                     if (stats.TryGetProperty("health", out var hpObj) && hpObj.ValueKind == JsonValueKind.Object)
                     {
-                        if (hpObj.TryGetProperty("base", out var baseHp) && baseHp.TryGetInt32(out var bVal)) hp = bVal;
+                        if (hpObj.TryGetProperty("base", out var baseHp) && baseHp.ValueKind == JsonValueKind.Number && baseHp.TryGetInt32(out var bVal)) hp = bVal;
                     }
                 }
 
@@ -411,7 +471,7 @@ public sealed class DeadlockerScraper : IDeadlockerScraper
         {
             var name = aProp.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
             var icon = aProp.TryGetProperty("icon", out var ic) ? ic.GetString() : null;
-            var id = aProp.TryGetProperty("id", out var i) && i.TryGetInt32(out var val) ? val : 0;
+            var id = aProp.TryGetProperty("id", out var i) && i.ValueKind == JsonValueKind.Number && i.TryGetInt32(out var val) ? val : 0;
             if (!string.IsNullOrWhiteSpace(name))
             {
                 list.Add(new DeadlockAbilityDto
