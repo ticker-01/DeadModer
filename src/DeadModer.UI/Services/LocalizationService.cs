@@ -26,7 +26,7 @@ public sealed partial class LocalizationService : ObservableObject
         // Приложение
         ["App_Title"] = "DEADMODER",
         ["App_Subtitle"] = "Моды для Deadlock",
-        ["App_Version"] = "Deadmoder v0.0.1 (Alpha)",
+        ["App_Version"] = "Deadmoder v0.0.2 (Alpha)",
         ["App_Quote"] = "Модификации Source 2",
 
         // Навигация
@@ -220,7 +220,7 @@ public sealed partial class LocalizationService : ObservableObject
         // App
         ["App_Title"] = "DEADMODER",
         ["App_Subtitle"] = "Deadlock Mod Manager",
-        ["App_Version"] = "Deadmoder v0.0.1 (Alpha)",
+        ["App_Version"] = "Deadmoder v0.0.2 (Alpha)",
         ["App_Quote"] = "Source 2 Modifications",
 
         // Navigation
