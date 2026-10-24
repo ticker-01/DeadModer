@@ -3,7 +3,7 @@
              xmlns:vm="using:DeadModer.UI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="950" d:DesignHeight="850"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="850"
              x:Class="DeadModer.UI.Views.SettingsView"
              x:DataType="vm:SettingsViewModel"
              Background="Transparent">
@@ -13,184 +13,270 @@
     </Design.DataContext>
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="28,24" Spacing="20" MaxWidth="820" HorizontalAlignment="Left">
-            <!-- ЗАГОЛОВОК -->
-            <Border Background="#75111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="10" Padding="24,18">
+        <StackPanel Margin="32,24" Spacing="24">
+            <!-- 1. ЗАГОЛОВОК НАСТРОЕК В СТИЛЕ GILDED NOIR -->
+            <Border Background="{StaticResource BrushCardBannerGradient}" BorderBrush="{StaticResource BrushBorderLineGold}" BorderThickness="1" CornerRadius="18" Padding="28,24">
                 <Grid ColumnDefinitions="*, Auto">
-                    <StackPanel Grid.Column="0" Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource IconSettings}" Width="18" Height="18" Foreground="#FFFFFF" />
-                            <TextBlock Text="{Binding Loc[Settings_Title]}" FontSize="22" FontWeight="Black" Foreground="#FFFFFF" />
+                    <StackPanel Grid.Column="0" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Rectangle Width="8" Height="8" Fill="{StaticResource BrushGold}" VerticalAlignment="Center">
+                                <Rectangle.RenderTransform>
+                                    <RotateTransform Angle="45" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                            <TextBlock Text="{Binding Loc[Settings_Title]}"
+                                       FontFamily="{StaticResource FontOswald}"
+                                       FontSize="28" FontWeight="Bold"
+                                       Foreground="{StaticResource BrushGoldLight}"
+                                       LetterSpacing="0.04"
+                                       VerticalAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Text="{Binding Loc[Settings_Subtitle]}" FontSize="12" Foreground="#858EA0" />
+                        <TextBlock Text="{Binding Loc[Settings_Subtitle]}" FontSize="13" Foreground="{StaticResource BrushDimText}" />
                     </StackPanel>
-                    <Border Grid.Column="1" Background="#161C2C" BorderBrush="#25324A" BorderThickness="1" CornerRadius="8" Padding="14,8" VerticalAlignment="Center">
-                        <TextBlock Text="CONFIG" FontWeight="Bold" FontSize="11" Foreground="#CBD5E1" LetterSpacing="1.5" />
+                    <Border Grid.Column="1" Background="#141822" BorderBrush="{StaticResource BrushBorderLineGold}" BorderThickness="1" CornerRadius="8" Padding="16,8" VerticalAlignment="Center">
+                        <TextBlock Text="CONFIG" FontFamily="{StaticResource FontOswald}" FontWeight="Bold" FontSize="12" Foreground="{StaticResource BrushGoldLight}" LetterSpacing="1.5" />
                     </Border>
                 </Grid>
             </Border>
 
-            <!-- БАННЕР СТАТУСА ОБНАРУЖЕНИЯ -->
-            <Border Background="#121824" BorderBrush="#1E2A3E" BorderThickness="1" CornerRadius="8" Padding="16,12">
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBlock Grid.Column="0" Text="{Binding DetectionStatus}" FontSize="12" Foreground="#BAE6FD" VerticalAlignment="Center" />
-                    <Button Grid.Column="1"
+            <!-- 2. БАННЕР СТАТУСА ОБНАРУЖЕНИЯ -->
+            <Border Background="#0C1B14" BorderBrush="{StaticResource BrushSpectralGreen}" BorderThickness="1" CornerRadius="14" Padding="18,14">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <PathIcon Grid.Column="0" Data="{StaticResource IconCheckCircle}" Width="16" Height="16" Foreground="{StaticResource BrushSpectralGreen}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding DetectionStatus}" FontSize="13" Foreground="#A3E6C8" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    <Button Grid.Column="2"
                             Command="{Binding AutoDetectSteamPathCommand}"
-                            Height="30" Padding="14,0" CornerRadius="6"
-                            BorderThickness="0"
-                            Background="#0284C7" Foreground="#FFFFFF" FontSize="11" FontWeight="SemiBold">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <PathIcon Data="{StaticResource IconSearch}" Width="12" Height="12" Foreground="#FFFFFF" />
-                            <TextBlock Text="{Binding Loc[Settings_AutoDetect]}" />
+                            Classes="btnGold" Height="36" Padding="18,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <PathIcon Data="{StaticResource IconSearch}" Width="13" Height="13" Foreground="#1A1204" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Loc[Settings_AutoDetect]}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </Grid>
             </Border>
 
-            <!-- СЕКЦИЯ 1: ЯЗЫК И ФОНОВОЕ ИЗОБРАЖЕНИЕ -->
-            <Border Background="#75111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="8" Padding="20">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="{Binding Loc[Settings_AppearanceSection]}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" />
+            <!-- ДВУХКОЛОНОЧНЫЙ МАКЕТ СЕКЦИЙ -->
+            <Grid ColumnDefinitions="*, 340">
+                <!-- ЛЕВАЯ КОЛОНКА: ОСНОВНЫЕ НАСТРОЙКИ -->
+                <StackPanel Grid.Column="0" Spacing="20" Margin="0,0,24,0">
+                    <!-- СЕКЦИЯ 1: ЯЗЫК ИНТЕРФЕЙСА -->
+                    <Border Background="{StaticResource BrushCardGradient}" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" CornerRadius="14" Padding="20">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="{Binding Loc[Settings_AppearanceSection]}"
+                                       FontFamily="{StaticResource FontOswald}" FontWeight="Bold" FontSize="16"
+                                       Foreground="{StaticResource BrushGoldLight}" />
 
-                    <!-- Выбор языка -->
-                    <Grid ColumnDefinitions="*, Auto">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{Binding Loc[Settings_Language]}" FontWeight="SemiBold" FontSize="13" Foreground="#FFFFFF" />
-                            <TextBlock Text="Русский / English" FontSize="11" Foreground="#6C7588" />
+                            <!-- Выбор языка (Сегментированный переключатель .seg) -->
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Loc[Settings_Language]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource BrushBoneText}" />
+                                    <TextBlock Text="Русский / English" FontSize="12" Foreground="{StaticResource BrushDimText}" />
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="#08090C" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" CornerRadius="12" Padding="4">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Button Content="RU" 
+                                                Command="{Binding SelectLanguageCommand}" CommandParameter="ru"
+                                                Height="34" MinWidth="54" Padding="14,0" CornerRadius="8"
+                                                Classes.active="{Binding IsRussianSelected}"
+                                                Classes.inactive="{Binding !IsRussianSelected}"
+                                                Cursor="Hand">
+                                            <Button.Styles>
+                                                <Style Selector="Button.active">
+                                                    <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+                                                    <Setter Property="Foreground" Value="#1A1204" />
+                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                </Style>
+                                                <Style Selector="Button.inactive">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushDimText}" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                </Style>
+                                            </Button.Styles>
+                                        </Button>
+                                        <Button Content="EN" 
+                                                Command="{Binding SelectLanguageCommand}" CommandParameter="en"
+                                                Height="34" MinWidth="54" Padding="14,0" CornerRadius="8"
+                                                Classes.active="{Binding IsEnglishSelected}"
+                                                Classes.inactive="{Binding !IsEnglishSelected}"
+                                                Cursor="Hand">
+                                            <Button.Styles>
+                                                <Style Selector="Button.active">
+                                                    <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+                                                    <Setter Property="Foreground" Value="#1A1204" />
+                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                </Style>
+                                                <Style Selector="Button.inactive">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushDimText}" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                </Style>
+                                            </Button.Styles>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                            <Button Content="RU" 
-                                    Command="{Binding SelectLanguageCommand}" CommandParameter="ru"
-                                    Height="30" Padding="14,0" CornerRadius="6"
-                                    BorderBrush="#253046" BorderThickness="1"
-                                    Classes.active="{Binding IsRussianSelected}"
-                                    Classes.inactive="{Binding !IsRussianSelected}">
-                                <Button.Styles>
-                                    <Style Selector="Button.active">
-                                        <Setter Property="Background" Value="#2563EB" />
-                                        <Setter Property="BorderBrush" Value="#3B82F6" />
-                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                        <Setter Property="FontWeight" Value="Bold" />
-                                    </Style>
-                                    <Style Selector="Button.inactive">
-                                        <Setter Property="Background" Value="#141926" />
-                                        <Setter Property="Foreground" Value="#858EA0" />
-                                    </Style>
-                                </Button.Styles>
-                            </Button>
-                            <Button Content="EN" 
-                                    Command="{Binding SelectLanguageCommand}" CommandParameter="en"
-                                    Height="30" Padding="14,0" CornerRadius="6"
-                                    BorderBrush="#253046" BorderThickness="1"
-                                    Classes.active="{Binding IsEnglishSelected}"
-                                    Classes.inactive="{Binding !IsEnglishSelected}">
-                                <Button.Styles>
-                                    <Style Selector="Button.active">
-                                        <Setter Property="Background" Value="#2563EB" />
-                                        <Setter Property="BorderBrush" Value="#3B82F6" />
-                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                        <Setter Property="FontWeight" Value="Bold" />
-                                    </Style>
-                                    <Style Selector="Button.inactive">
-                                        <Setter Property="Background" Value="#141926" />
-                                        <Setter Property="Foreground" Value="#858EA0" />
-                                    </Style>
-                                </Button.Styles>
-                            </Button>
+                    </Border>
+
+                    <!-- СЕКЦИЯ 2: ПУТИ К ИГРЕ И ФАЙЛАМ -->
+                    <Border Background="{StaticResource BrushCardGradient}" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" CornerRadius="14" Padding="20">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="{Binding Loc[Settings_PathsSection]}"
+                                       FontFamily="{StaticResource FontOswald}" FontWeight="Bold" FontSize="16"
+                                       Foreground="{StaticResource BrushGoldLight}" />
+
+                            <!-- Путь к Deadlock -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{Binding Loc[Settings_GamePath]}" FontSize="12" Foreground="{StaticResource BrushDimText}" FontWeight="SemiBold" />
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBox Grid.Column="0" Text="{Binding GamePath}" 
+                                             Background="#08090C" Foreground="{StaticResource BrushBoneText}" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" 
+                                             CornerRadius="8" Height="42" VerticalContentAlignment="Center" Padding="14,0"
+                                             FontFamily="{StaticResource FontMono}" FontSize="12.5" />
+                                    <Button Grid.Column="1" Content="{Binding Loc[Settings_Autosearch]}" Margin="8,0,0,0"
+                                            Command="{Binding AutoDetectSteamPathCommand}"
+                                            Classes="btnDark" Height="42" Padding="16,0" CornerRadius="8" FontSize="12" />
+                                </Grid>
+                                <TextBlock Text="{Binding Loc[Settings_GamePathHint]}" FontSize="11" Foreground="{StaticResource BrushDimText}" />
+                            </StackPanel>
+
+                            <!-- Папка модов addons -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{Binding Loc[Settings_AddonsPath]}" FontSize="12" Foreground="{StaticResource BrushDimText}" FontWeight="SemiBold" />
+                                <TextBox Text="{Binding ModsStoragePath}" 
+                                         Background="#08090C" Foreground="{StaticResource BrushBoneText}" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" 
+                                         CornerRadius="8" Height="42" VerticalContentAlignment="Center" Padding="14,0"
+                                         FontFamily="{StaticResource FontMono}" FontSize="12.5" />
+                                <TextBlock Text="{Binding Loc[Settings_AddonsPathHint]}" FontSize="11" Foreground="{StaticResource BrushDimText}" />
+                            </StackPanel>
+
+                            <!-- Папка бэкапов -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{Binding Loc[Settings_BackupsPath]}" FontSize="12" Foreground="{StaticResource BrushDimText}" FontWeight="SemiBold" />
+                                <TextBox Text="{Binding BackupsPath}" 
+                                         Background="#08090C" Foreground="{StaticResource BrushBoneText}" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" 
+                                         CornerRadius="8" Height="42" VerticalContentAlignment="Center" Padding="14,0"
+                                         FontFamily="{StaticResource FontMono}" FontSize="12.5" />
+                            </StackPanel>
                         </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
+                    </Border>
 
-            <!-- СЕКЦИЯ 2: ПУТИ К ИГРЕ И ФАЙЛАМ -->
-            <Border Background="#75111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="8" Padding="20">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="{Binding Loc[Settings_PathsSection]}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" />
+                    <!-- СЕКЦИЯ 3: ПАРАМЕТРЫ ПОВЕДЕНИЯ (.sw) -->
+                    <Border Background="{StaticResource BrushCardGradient}" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" CornerRadius="14" Padding="20">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="{Binding Loc[Settings_BehaviorSection]}"
+                                       FontFamily="{StaticResource FontOswald}" FontWeight="Bold" FontSize="16"
+                                       Foreground="{StaticResource BrushGoldLight}" />
 
-                    <!-- Путь к Deadlock -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{Binding Loc[Settings_GamePath]}" FontSize="12" Foreground="#858EA0" />
-                        <Grid ColumnDefinitions="*, Auto">
-                            <TextBox Grid.Column="0" Text="{Binding GamePath}" 
-                                     Background="#121624" Foreground="#FFFFFF" BorderBrush="#1F283C" BorderThickness="1" 
-                                     CornerRadius="6" Height="38" VerticalContentAlignment="Center" Padding="12,0" />
-                            <Button Grid.Column="1" Content="{Binding Loc[Settings_Autosearch]}" Margin="8,0,0,0"
-                                    Command="{Binding AutoDetectSteamPathCommand}"
-                                    Background="#141926" BorderBrush="#25324A" BorderThickness="1"
-                                    Foreground="#CBD4E1" Height="38" Padding="14,0" CornerRadius="6" FontSize="12" />
-                        </Grid>
-                        <TextBlock Text="{Binding Loc[Settings_GamePathHint]}" FontSize="11" Foreground="#555E70" />
+                            <!-- Проверка обновлений -->
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Loc[Settings_AutoCheckUpdates]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource BrushBoneText}" />
+                                    <TextBlock Text="{Binding Loc[Settings_AutoCheckUpdatesHint]}" FontSize="11" Foreground="{StaticResource BrushDimText}" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoCheckUpdates}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Fill="{StaticResource BrushBorderLine}" Height="1" />
+
+                            <!-- Запуск игры с модами -->
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Loc[Settings_LaunchWithMods]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource BrushBoneText}" />
+                                    <TextBlock Text="{Binding Loc[Settings_LaunchWithModsHint]}" FontSize="11" Foreground="{StaticResource BrushDimText}" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchGameWithMods}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Fill="{StaticResource BrushBorderLine}" Height="1" />
+
+                            <!-- Сворачивание в трей -->
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Loc[Settings_CloseToTray]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource BrushBoneText}" />
+                                    <TextBlock Text="{Binding Loc[Settings_CloseToTrayHint]}" FontSize="11" Foreground="{StaticResource BrushDimText}" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" OnContent="" OffContent="" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- СЕКЦИЯ 4: СОХРАНЕНИЕ -->
+                    <StackPanel Orientation="Horizontal" Spacing="18" VerticalAlignment="Center">
+                        <Button Content="{Binding Loc[Btn_SaveSettings]}" 
+                                Command="{Binding SaveSettingsCommand}"
+                                Classes="btnGold" Height="44" Padding="28,0" />
+                        
+                        <TextBlock Text="{Binding StatusMessage}" 
+                                   FontSize="13" Foreground="{StaticResource BrushSpectralGreen}" 
+                                   VerticalAlignment="Center" FontWeight="SemiBold" />
                     </StackPanel>
-
-                    <!-- Папка модов addons -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{Binding Loc[Settings_AddonsPath]}" FontSize="12" Foreground="#858EA0" />
-                        <TextBox Text="{Binding ModsStoragePath}" 
-                                 Background="#121624" Foreground="#FFFFFF" BorderBrush="#1F283C" BorderThickness="1" 
-                                 CornerRadius="6" Height="38" VerticalContentAlignment="Center" Padding="12,0" />
-                        <TextBlock Text="{Binding Loc[Settings_AddonsPathHint]}" FontSize="11" Foreground="#555E70" />
-                    </StackPanel>
-
-                    <!-- Папка бэкапов -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{Binding Loc[Settings_BackupsPath]}" FontSize="12" Foreground="#858EA0" />
-                        <TextBox Text="{Binding BackupsPath}" 
-                                 Background="#121624" Foreground="#FFFFFF" BorderBrush="#1F283C" BorderThickness="1" 
-                                 CornerRadius="6" Height="38" VerticalContentAlignment="Center" Padding="12,0" />
-                    </StackPanel>
                 </StackPanel>
-            </Border>
 
-            <!-- СЕКЦИЯ 3: ПАРАМЕТРЫ ПОВЕДЕНИЯ -->
-            <Border Background="#75111522" BorderBrush="#1C2436" BorderThickness="1" CornerRadius="8" Padding="20">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="{Binding Loc[Settings_BehaviorSection]}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" />
+                <!-- ПРАВАЯ КОЛОНКА: ДИАГНОСТИКА СИСТЕМЫ (.chk) -->
+                <StackPanel Grid.Column="1" Spacing="16">
+                    <Border Background="{StaticResource BrushCardGradient}" BorderBrush="{StaticResource BrushBorderLineGold}" BorderThickness="1" CornerRadius="14" Padding="18">
+                        <StackPanel Spacing="14">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconSparkle}" Width="15" Height="15" Foreground="{StaticResource BrushGold}" VerticalAlignment="Center" />
+                                <TextBlock Text="ДИАГНОСТИКА СИСТЕМЫ"
+                                           FontFamily="{StaticResource FontOswald}" FontWeight="Bold" FontSize="14"
+                                           Foreground="{StaticResource BrushGoldLight}" LetterSpacing="0.04" VerticalAlignment="Center" />
+                            </StackPanel>
 
-                    <!-- Проверка обновлений -->
-                    <Grid ColumnDefinitions="*, Auto">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{Binding Loc[Settings_AutoCheckUpdates]}" FontWeight="SemiBold" FontSize="13" Foreground="#FFFFFF" />
-                            <TextBlock Text="{Binding Loc[Settings_AutoCheckUpdatesHint]}" FontSize="11" Foreground="#6C7588" />
+                            <!-- Чек 1: gameinfo.gi -->
+                            <Border Background="#0C1B14" BorderBrush="{StaticResource BrushSpectralGreen}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <PathIcon Grid.Column="0" Data="{StaticResource IconCheckCircle}" Width="14" Height="14" Foreground="{StaticResource BrushSpectralGreen}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="gameinfo.gi SearchPaths" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushSpectralGreen}" />
+                                        <TextBlock Text="Монтирование citadel/addons активно" FontSize="10" Foreground="#86EFAC" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Чек 2: Steam AppID -->
+                            <Border Background="#0C1B14" BorderBrush="{StaticResource BrushSpectralGreen}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <PathIcon Grid.Column="0" Data="{StaticResource IconCheckCircle}" Width="14" Height="14" Foreground="{StaticResource BrushSpectralGreen}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="Steam AppID: 1422450" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushSpectralGreen}" />
+                                        <TextBlock Text="Deadlock билд обнаружен в Steam" FontSize="10" Foreground="#86EFAC" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Чек 3: VPK Addons -->
+                            <Border Background="#0C1B14" BorderBrush="{StaticResource BrushSpectralGreen}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <PathIcon Grid.Column="0" Data="{StaticResource IconCheckCircle}" Width="14" Height="14" Foreground="{StaticResource BrushSpectralGreen}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="VPK Хранилище addons" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushSpectralGreen}" />
+                                        <TextBlock Text="Права на запись pakXX_dir.vpk подтверждены" FontSize="10" Foreground="#86EFAC" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Чек 4: Версия менеджера -->
+                            <Border Background="#121620" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Rectangle Grid.Column="0" Width="8" Height="8" Fill="{StaticResource BrushGold}" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <Rectangle.RenderTransform>
+                                            <RotateTransform Angle="45" />
+                                        </Rectangle.RenderTransform>
+                                    </Rectangle>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="DeadModer v2.4.0 Live" FontSize="11" FontWeight="Bold" Foreground="{StaticResource BrushGoldLight}" />
+                                        <TextBlock Text="Режим Source 2 Mod Engine: Gilded Noir" FontSize="10" Foreground="{StaticResource BrushDimText}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                         </StackPanel>
-                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoCheckUpdates}" OnContent="" OffContent="" />
-                    </Grid>
-
-                    <Separator Background="#191D2A" Height="1" />
-
-                    <!-- Запуск игры с модами -->
-                    <Grid ColumnDefinitions="*, Auto">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{Binding Loc[Settings_LaunchWithMods]}" FontWeight="SemiBold" FontSize="13" Foreground="#FFFFFF" />
-                            <TextBlock Text="{Binding Loc[Settings_LaunchWithModsHint]}" FontSize="11" Foreground="#6C7588" />
-                        </StackPanel>
-                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchGameWithMods}" OnContent="" OffContent="" />
-                    </Grid>
-
-                    <Separator Background="#191D2A" Height="1" />
-
-                    <!-- Сворачивание в трей -->
-                    <Grid ColumnDefinitions="*, Auto">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{Binding Loc[Settings_CloseToTray]}" FontWeight="SemiBold" FontSize="13" Foreground="#FFFFFF" />
-                            <TextBlock Text="{Binding Loc[Settings_CloseToTrayHint]}" FontSize="11" Foreground="#6C7588" />
-                        </StackPanel>
-                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" OnContent="" OffContent="" />
-                    </Grid>
+                    </Border>
                 </StackPanel>
-            </Border>
-
-            <!-- СЕКЦИЯ 4: СОХРАНЕНИЕ -->
-            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                <Button Content="{Binding Loc[Btn_SaveSettings]}" 
-                        Command="{Binding SaveSettingsCommand}"
-                        Height="38" Padding="22,0" CornerRadius="6"
-                        BorderThickness="0"
-                        Background="#2563EB" Foreground="#FFFFFF" FontSize="13" FontWeight="Bold" />
-                
-                <TextBlock Text="{Binding StatusMessage}" 
-                           FontSize="13" Foreground="#4ADE80" 
-                           VerticalAlignment="Center" FontWeight="SemiBold" />
-            </StackPanel>
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

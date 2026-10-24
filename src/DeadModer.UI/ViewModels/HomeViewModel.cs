@@ -44,6 +44,30 @@ public partial class HomeViewModel : ViewModelBase
     [ObservableProperty]
     private string _addonsStatusText = "game/citadel/addons: Активна";
 
+    private static readonly string[] BannerHeroPool =
+    [
+        "avares://DeadModer.UI/Assets/Design/victor-cut.png",
+        "avares://DeadModer.UI/Assets/Design/hero-infernus-big.png",
+        "avares://DeadModer.UI/Assets/Heroes/inferno_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/wraith_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/haze_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/mirage_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/yamato_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/viscous_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/kelvin_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/spectre_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/chrono_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/bebop_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/warden_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/shiv_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/archer_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/gigawatt_full.png",
+        "avares://DeadModer.UI/Assets/Heroes/hornet_full.png"
+    ];
+
+    [ObservableProperty]
+    private string _bannerHeroImage = BannerHeroPool[0];
+
     public ObservableCollection<ModCardViewModel> FeaturedMods { get; } = [];
 
     public HomeViewModel() : this(null, null, null, null, null, null, null, null, null) { }
@@ -68,6 +92,17 @@ public partial class HomeViewModel : ViewModelBase
         _onNavigate = onNavigate;
         _onFilterHero = onFilterHero;
         _deadlockerScraper = deadlockerScraper;
+        PickRandomBannerHero();
+    }
+
+    [RelayCommand]
+    public void PickRandomBannerHero()
+    {
+        if (BannerHeroPool.Length > 0)
+        {
+            var idx = Random.Shared.Next(BannerHeroPool.Length);
+            BannerHeroImage = BannerHeroPool[idx];
+        }
     }
 
     [RelayCommand]

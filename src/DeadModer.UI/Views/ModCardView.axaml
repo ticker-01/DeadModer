@@ -3,7 +3,7 @@
              xmlns:vm="using:DeadModer.UI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="205" d:DesignHeight="245"
+             mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="276"
              x:Class="DeadModer.UI.Views.ModCardView"
              x:DataType="vm:ModCardViewModel"
              IsVisible="{Binding IsVisible}">
@@ -12,79 +12,92 @@
         <vm:ModCardViewModel />
     </Design.DataContext>
 
-    <!-- КНОПКА-КОНТЕЙНЕР ДЛЯ ОТКРЫТИЯ СТРАНИЦЫ МОДА (MOCKUP 2) -->
+    <!-- КНОПКА-КОНТЕЙНЕР ДЛЯ ОТКРЫТИЯ ДЕТАЛЬНОЙ СТРАНИЦЫ МОДА -->
     <Button Command="{Binding OpenDetailCommand}"
             Padding="0"
             Background="Transparent"
             BorderThickness="0"
             HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
+            VerticalAlignment="Stretch"
+            Cursor="Hand">
         <Button.Styles>
             <Style Selector="Button:pointerover /template/ ContentPresenter">
                 <Setter Property="Background" Value="Transparent" />
             </Style>
         </Button.Styles>
 
-        <Border Background="#85121624"
-                BorderBrush="#1E2638"
-                BorderThickness="1"
-                CornerRadius="8"
-                Width="195"
-                Height="240"
+        <!-- КАРТОЧКА GILDED NOIR С ЗОЛОТЫМИ АКЦЕНТАМИ И УГОЛКАМИ -->
+        <Border Background="{StaticResource BrushCardGradient}"
+                BorderBrush="{StaticResource BrushBorderLine}"
+                BorderThickness="1.2"
+                CornerRadius="16"
+                Width="220"
+                Height="276"
                 ClipToBounds="True">
             <Border.Styles>
                 <Style Selector="Border:pointerover">
-                    <Setter Property="BorderBrush" Value="#3B82F6" />
-                    <Setter Property="Background" Value="#95161C2C" />
+                    <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+                    <Setter Property="Background" Value="{StaticResource BrushInkCardHover}" />
                 </Style>
             </Border.Styles>
 
-            <Grid RowDefinitions="95, *">
-                <!-- ВЕРХ: ПРЕВЬЮ СКРИНШОТ МОДА -->
-                <Border Grid.Row="0" Background="#141824" ClipToBounds="True">
+            <Grid RowDefinitions="115, *">
+                <!-- ВЕРХ: ПРЕВЬЮ СКРИНШОТ МОДА (ДИНАМИЧЕСКАЯ ЗАГРУЗКА ИЗ СЕТИ / КЭША) -->
+                <Border Grid.Row="0" Background="#0B0D12" ClipToBounds="True">
                     <Grid>
-                        <!-- Изображение мода -->
+                        <!-- 1. Динамическое изображение мода (ImageCacheService) -->
                         <Image Source="{Binding PreviewBitmap}"
                                Stretch="UniformToFill"
                                IsVisible="{Binding PreviewBitmap, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
-                        <!-- Фон по умолчанию (если превью нет) -->
-                        <Grid Background="#161B28" IsVisible="{Binding PreviewBitmap, Converter={x:Static ObjectConverters.IsNull}}">
-                            <PathIcon Data="{StaticResource IconMods}" Width="24" Height="24" Foreground="#2A3750"
+                        <!-- 2. Благородный нуар-плейсхолдер (если превью ещё загружается или отсутствует) -->
+                        <Grid Background="#0D1017" IsVisible="{Binding PreviewBitmap, Converter={x:Static ObjectConverters.IsNull}}">
+                            <Ellipse Width="70" Height="70" Stroke="{StaticResource BrushBorderLineGold}" StrokeThickness="1" StrokeDashArray="3,3" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.3" />
+                            <PathIcon Data="{StaticResource IconMods}" Width="26" Height="26" Foreground="{StaticResource BrushGoldLight}" Opacity="0.4"
                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
 
-                        <!-- Полупрозрачное затемнение картинки -->
-                        <Border Background="#35000000" />
+                        <!-- 3. Мягкое нижнее затемнение для читаемости тегов -->
+                        <Border>
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                    <GradientStop Offset="0.0" Color="#1008090C" />
+                                    <GradientStop Offset="0.6" Color="#3008090C" />
+                                    <GradientStop Offset="1.0" Color="#D008090C" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
 
-                        <!-- Верхний ряд: Категория слева, бейджи, три точки меню справа -->
-                        <Grid Margin="8,6" VerticalAlignment="Top" ColumnDefinitions="*, Auto">
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Left">
-                                <Border Background="#D00B0E17" BorderBrush="#202A3C" BorderThickness="1"
-                                        CornerRadius="4" Padding="6,2">
-                                    <TextBlock Text="{Binding Category}" FontSize="9" FontWeight="SemiBold" Foreground="#CBD5E1" />
+                        <!-- 4. Верхний ряд: Категория слева, бейджи, меню справа -->
+                        <Grid Margin="10,8" VerticalAlignment="Top" ColumnDefinitions="*, Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="5" HorizontalAlignment="Left">
+                                <!-- Категория (Gold Tag) -->
+                                <Border Background="#CC08090C" BorderBrush="{StaticResource BrushBorderLineGold}" BorderThickness="1"
+                                        CornerRadius="6" Padding="7,2">
+                                    <TextBlock Text="{Binding Category}" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource BrushGoldLight}" LetterSpacing="0.8" />
                                 </Border>
 
                                 <!-- Бейдж выбора редакции (Featured) -->
-                                <Border Background="#E03D2E0B" BorderBrush="#785315" BorderThickness="1"
-                                        CornerRadius="4" Padding="4,2"
+                                <Border Background="#D03D2E0B" BorderBrush="{StaticResource BrushGold}" BorderThickness="1"
+                                        CornerRadius="6" Padding="6,2"
                                         IsVisible="{Binding IsFeatured}"
                                         ToolTip.Tip="Выбор редакции">
-                                    <TextBlock Text="Топ" FontSize="8" FontWeight="Bold" Foreground="#FBBF24" />
+                                    <TextBlock Text="ТОП" FontSize="8.5" FontWeight="Black" Foreground="{StaticResource BrushGoldLight}" />
                                 </Border>
 
                                 <!-- Бейдж 18+ (NSFW) -->
-                                <Border Background="#E0421212" BorderBrush="#7F1D1D" BorderThickness="1"
-                                        CornerRadius="4" Padding="4,2"
+                                <Border Background="#D0421212" BorderBrush="{StaticResource BrushEmberRedBorder}" BorderThickness="1"
+                                        CornerRadius="6" Padding="6,2"
                                         IsVisible="{Binding IsNsfw}"
                                         ToolTip.Tip="Возрастное ограничение 18+">
-                                    <TextBlock Text="18+" FontSize="8" FontWeight="Bold" Foreground="#EF4444" />
+                                    <TextBlock Text="18+" FontSize="8.5" FontWeight="Black" Foreground="{StaticResource BrushEmberRed}" />
                                 </Border>
                             </StackPanel>
 
                             <Border Grid.Column="1" HorizontalAlignment="Right"
-                                    Background="#D00B0E17" CornerRadius="4" Width="20" Height="20">
-                                <PathIcon Data="{StaticResource IconDotsVertical}" Width="10" Height="10" Foreground="#858EA0"
+                                    Background="#CC08090C" BorderBrush="{StaticResource BrushBorderLine}" BorderThickness="1"
+                                    CornerRadius="6" Width="22" Height="22">
+                                <PathIcon Data="{StaticResource IconDotsVertical}" Width="11" Height="11" Foreground="{StaticResource BrushDimText}"
                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                         </Grid>
@@ -92,41 +105,41 @@
                 </Border>
 
                 <!-- НИЗ: НАЗВАНИЕ, ОПИСАНИЕ, СТАТИСТИКА И КНОПКА ДЕЙСТВИЯ -->
-                <Border Grid.Row="1" Padding="10,8" Background="#800E121E">
+                <Border Grid.Row="1" Padding="12,10" Background="#F00D1016">
                     <Grid RowDefinitions="Auto, *, Auto, Auto">
                         <!-- Название мода -->
                         <TextBlock Grid.Row="0"
                                    Text="{Binding Name}"
                                    FontWeight="Bold"
-                                   FontSize="12"
-                                   Foreground="#FFFFFF"
+                                   FontSize="12.5"
+                                   Foreground="{StaticResource BrushBoneText}"
                                    TextTrimming="CharacterEllipsis" />
 
                         <!-- Краткое описание мода (2 строки) -->
                         <TextBlock Grid.Row="1"
                                    Text="{Binding Description}"
-                                   FontSize="10"
-                                   Foreground="#717A8C"
+                                   FontSize="10.5"
+                                   Foreground="{StaticResource BrushDimText}"
                                    TextTrimming="CharacterEllipsis"
                                    MaxLines="2"
-                                   LineHeight="14"
-                                   Margin="0,2,0,4" />
+                                   LineHeight="15"
+                                   Margin="0,3,0,6" />
 
                         <!-- Статистика: Загрузки и рейтинг -->
-                        <Grid Grid.Row="2" ColumnDefinitions="Auto, Auto, *" Margin="0,0,0,6">
+                        <Grid Grid.Row="2" ColumnDefinitions="Auto, Auto, *" Margin="0,0,0,8">
                             <!-- Загрузки -->
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource IconDownloadMini}" Width="10" Height="10" Foreground="#CBD5E1" />
-                                <TextBlock Text="{Binding DownloadCountFormatted}" FontSize="10" Foreground="#858EA0" />
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconDownloadMini}" Width="10" Height="10" Foreground="{StaticResource BrushDimText}" />
+                                <TextBlock Text="{Binding DownloadCountFormatted}" FontSize="10.5" Foreground="{StaticResource BrushDimText}" />
                             </StackPanel>
 
                             <!-- Разделитель -->
-                            <TextBlock Grid.Column="1" Text="•" FontSize="10" Foreground="#334155" Margin="5,0" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="•" FontSize="10" Foreground="{StaticResource BrushBorderLine}" Margin="6,0" VerticalAlignment="Center" />
 
                             <!-- Рейтинг -->
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource IconStar}" Width="10" Height="10" Foreground="#FFFFFF" />
-                                <TextBlock Text="4.8" FontSize="10" FontWeight="SemiBold" Foreground="#858EA0" />
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <PathIcon Data="{StaticResource IconStar}" Width="10" Height="10" Foreground="{StaticResource BrushGold}" />
+                                <TextBlock Text="4.8" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource BrushGoldLight}" />
                             </StackPanel>
                         </Grid>
 
@@ -136,38 +149,50 @@
                             <ProgressBar IsVisible="{Binding IsInstalling}"
                                          Value="{Binding InstallProgress}"
                                          Minimum="0" Maximum="1"
-                                         Height="2"
-                                         Foreground="#2563EB" Background="#161B28"
+                                         Height="3"
+                                         Foreground="{StaticResource BrushGold}" Background="#161B28"
                                          BorderThickness="0" Margin="0,0,0,4"
                                          VerticalAlignment="Top" />
 
                             <!-- Кнопка действия -->
                             <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                    Height="28" CornerRadius="6"
+                                    Height="32" CornerRadius="8"
                                     Command="{Binding InstallOrToggleCommand}"
                                     Classes.installed="{Binding IsInstalled}"
                                     Classes.notInstalled="{Binding !IsInstalled}">
                                 <Button.Styles>
+                                    <!-- Стиль: Установлен (Спектральный зелёный) -->
                                     <Style Selector="Button.installed">
-                                        <Setter Property="Background" Value="#10251B" />
-                                        <Setter Property="BorderBrush" Value="#1E442F" />
+                                        <Setter Property="Background" Value="#184FE0A8" />
+                                        <Setter Property="BorderBrush" Value="{StaticResource BrushSpectralGreenBorder}" />
                                         <Setter Property="BorderThickness" Value="1" />
-                                        <Setter Property="Foreground" Value="#4ADE80" />
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                        <Setter Property="FontSize" Value="11" />
+                                        <Setter Property="Foreground" Value="{StaticResource BrushSpectralGreen}" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                        <Setter Property="FontSize" Value="11.5" />
                                     </Style>
+                                    <Style Selector="Button.installed:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#254FE0A8" />
+                                        <Setter Property="Foreground" Value="{StaticResource BrushSpectralGreen}" />
+                                    </Style>
+
+                                    <!-- Стиль: Не установлен (Тёмная с золотым hover) -->
                                     <Style Selector="Button.notInstalled">
-                                        <Setter Property="Background" Value="#161C2C" />
-                                        <Setter Property="BorderBrush" Value="#25324A" />
+                                        <Setter Property="Background" Value="#121620" />
+                                        <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
                                         <Setter Property="BorderThickness" Value="1" />
-                                        <Setter Property="Foreground" Value="#CBD5E1" />
+                                        <Setter Property="Foreground" Value="{StaticResource BrushBoneText}" />
                                         <Setter Property="FontWeight" Value="SemiBold" />
-                                        <Setter Property="FontSize" Value="11" />
+                                        <Setter Property="FontSize" Value="11.5" />
+                                    </Style>
+                                    <Style Selector="Button.notInstalled:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="#1A1204" />
                                     </Style>
                                 </Button.Styles>
-                                <StackPanel Orientation="Horizontal" Spacing="5">
-                                    <PathIcon Data="{StaticResource IconCheck}" Width="10" Height="10" Foreground="#4ADE80" IsVisible="{Binding IsInstalled}" />
-                                    <TextBlock Text="{Binding ActionButtonText}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <PathIcon Data="{StaticResource IconCheck}" Width="11" Height="11" Foreground="{StaticResource BrushSpectralGreen}" IsVisible="{Binding IsInstalled}" />
+                                    <TextBlock Text="{Binding ActionButtonText}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                         </Grid>

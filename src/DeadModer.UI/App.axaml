@@ -79,6 +79,87 @@
         <StreamGeometry x:Key="IconMinimize">M5 12h14</StreamGeometry>
         <StreamGeometry x:Key="IconMaximize">M3 3h18v18H3z</StreamGeometry>
         <StreamGeometry x:Key="IconClose">M6 18L18 6M6 6l12 12</StreamGeometry>
+
+        <!-- ========================================================================= -->
+        <!-- GILDED NOIR DESIGN SYSTEM PALETTE & BRUSHES (SPEC D:\Ticker\Download\deadmoder-design) -->
+        <!-- ========================================================================= -->
+        <!-- Тёмные чернила (Фоны и панели) -->
+        <SolidColorBrush x:Key="BrushInk0" Color="#08090C" />
+        <SolidColorBrush x:Key="BrushInk1" Color="#0E1117" />
+        <SolidColorBrush x:Key="BrushInk2" Color="#181C25" />
+        <SolidColorBrush x:Key="BrushInk2Dark" Color="#0D1016" />
+        <SolidColorBrush x:Key="BrushInkCardHover" Color="#202532" />
+
+        <!-- Золото (Art Deco акценты) -->
+        <SolidColorBrush x:Key="BrushGold" Color="#F0A93B" />
+        <SolidColorBrush x:Key="BrushGoldLight" Color="#FFD27A" />
+        <SolidColorBrush x:Key="BrushGoldGlint" Color="#FFF2CF" />
+        <SolidColorBrush x:Key="BrushGoldDark" Color="#B9771C" />
+        <SolidColorBrush x:Key="BrushGoldTextDark" Color="#1A1204" />
+
+        <!-- Текст -->
+        <SolidColorBrush x:Key="BrushBoneText" Color="#EDE4D0" />
+        <SolidColorBrush x:Key="BrushDimText" Color="#A8A291" />
+        <SolidColorBrush x:Key="BrushMutedText" Color="#6C675B" />
+
+        <!-- Спектральный зелёный (Готовность, активные моды, addons) -->
+        <SolidColorBrush x:Key="BrushSpectralGreen" Color="#4FE0A8" />
+        <SolidColorBrush x:Key="BrushSpectralGreenBg" Color="#1A4FE0A8" />
+        <SolidColorBrush x:Key="BrushSpectralGreenBorder" Color="#804FE0A8" />
+
+        <!-- Огненный красный (Ember - атака, удаление, ошибки) -->
+        <SolidColorBrush x:Key="BrushEmberRed" Color="#FF5A3C" />
+        <SolidColorBrush x:Key="BrushEmberRedBg" Color="#1AFF5A3C" />
+        <SolidColorBrush x:Key="BrushEmberRedBorder" Color="#80FF5A3C" />
+
+        <!-- Сапфировый синий (Sapphire - защита, source 2, статус) -->
+        <SolidColorBrush x:Key="BrushSapphireBlue" Color="#6B9BFF" />
+        <SolidColorBrush x:Key="BrushSapphireBlueBg" Color="#1A6B9BFF" />
+        <SolidColorBrush x:Key="BrushSapphireBlueBorder" Color="#806B9BFF" />
+
+        <!-- Фиолетовый (Violet - контроль, спецэффекты) -->
+        <SolidColorBrush x:Key="BrushViolet" Color="#B184FF" />
+        <SolidColorBrush x:Key="BrushVioletBg" Color="#1AB184FF" />
+        <SolidColorBrush x:Key="BrushVioletBorder" Color="#80B184FF" />
+
+        <!-- Тонкие границы -->
+        <SolidColorBrush x:Key="BrushBorderLine" Color="#1AEDE4D0" />
+        <SolidColorBrush x:Key="BrushBorderLineGold" Color="#4DF0A93B" />
+        <SolidColorBrush x:Key="BrushBorderLineGoldActive" Color="#CCF0A93B" />
+
+        <!-- Градиенты Gilded Noir -->
+        <LinearGradientBrush x:Key="BrushGoldGradient" StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Offset="0.0" Color="#FFD27A" />
+            <GradientStop Offset="0.55" Color="#F0A93B" />
+            <GradientStop Offset="1.0" Color="#D98A1F" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="BrushGoldGradientHover" StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Offset="0.0" Color="#FFE3A3" />
+            <GradientStop Offset="0.55" Color="#FFB94D" />
+            <GradientStop Offset="1.0" Color="#E8981F" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="BrushCardGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+            <GradientStop Offset="0.0" Color="#EB181C25" />
+            <GradientStop Offset="1.0" Color="#EB0D1016" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="BrushCardBannerGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+            <GradientStop Offset="0.0" Color="#F2181C25" />
+            <GradientStop Offset="0.65" Color="#F20F121A" />
+            <GradientStop Offset="1.0" Color="#F208090C" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="BrushNavActiveGradient" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Offset="0.0" Color="#33F0A93B" />
+            <GradientStop Offset="1.0" Color="#08F0A93B" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="BrushSidebarGradient" StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Offset="0.0" Color="#F50E1117" />
+            <GradientStop Offset="1.0" Color="#F508090C" />
+        </LinearGradientBrush>
     </Application.Resources>
 
     <Application.Styles>
@@ -89,94 +170,166 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
-        <!-- Стили для кнопок навигации -->
+        <!-- ========================================================================= -->
+        <!-- КНОПКИ GILDED NOIR                                                        -->
+        <!-- ========================================================================= -->
+
+        <!-- 1. Золотая главная кнопка (Btn-Gold) -->
+        <Style Selector="Button.btnGold">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="22,0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="Foreground" Value="#1A1204" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.btnGold:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradientHover}" />
+            <Setter Property="Foreground" Value="#1A1204" />
+        </Style>
+
+        <!-- 2. Благородная тёмная кнопка (Btn-Dark) -->
+        <Style Selector="Button.btnDark">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="20,0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Background" Value="#0D1118" />
+            <Setter Property="Foreground" Value="{StaticResource BrushBoneText}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.btnDark:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#181D28" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
+        </Style>
+
+        <!-- 3. Компактная кнопка-иконка (Btn-Icon) -->
+        <Style Selector="Button.btnIcon">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Background" Value="#0D1118" />
+            <Setter Property="Foreground" Value="{StaticResource BrushDimText}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.btnIcon:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#181D28" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
+        </Style>
+
+        <!-- Стили для кнопок навигации левого сайдбара (240px Gilded Noir) -->
         <Style Selector="Button.sidebarNav">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Height" Value="40" />
+            <Setter Property="Height" Value="46" />
             <Setter Property="Padding" Value="14,0" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="CornerRadius" Value="12" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#8A94A6" />
+            <Setter Property="Foreground" Value="{StaticResource BrushDimText}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style Selector="Button.sidebarNav:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#151A26" />
-            <Setter Property="BorderBrush" Value="#222B3D" />
-            <Setter Property="Foreground" Value="#E2E8F0" />
+            <Setter Property="Background" Value="#10151E" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushBoneText}" />
         </Style>
         <Style Selector="Button.sidebarNav.active">
-            <Setter Property="Background" Value="#182030" />
-            <Setter Property="BorderBrush" Value="#2A3750" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="{StaticResource BrushNavActiveGradient}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
+            <Setter Property="FontWeight" Value="Bold" />
         </Style>
         <Style Selector="Button.sidebarNav.active /template/ ContentPresenter">
-            <Setter Property="Background" Value="#182030" />
-            <Setter Property="BorderBrush" Value="#2A3750" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="{StaticResource BrushNavActiveGradient}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
         </Style>
 
-        <!-- Стили для карточек и кнопок действий -->
+        <!-- Стили для категорий (.cat в Gilded Noir) -->
         <Style Selector="Button.pillCategory">
-            <Setter Property="Height" Value="34" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="12" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#1E2536" />
-            <Setter Property="Background" Value="#131722" />
-            <Setter Property="Foreground" Value="#8A94A6" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Background" Value="#0D1118" />
+            <Setter Property="Foreground" Value="{StaticResource BrushBoneText}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style Selector="Button.pillCategory:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1A2030" />
-            <Setter Property="BorderBrush" Value="#2A3750" />
-            <Setter Property="Foreground" Value="#CBD4E1" />
+            <Setter Property="Background" Value="#171C26" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
         </Style>
         <Style Selector="Button.pillCategory.active">
-            <Setter Property="Background" Value="#1F2A40" />
-            <Setter Property="BorderBrush" Value="#384C72" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1A1204" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="Button.pillCategory.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1A1204" />
         </Style>
 
-        <!-- Стили для кнопок фильтров и сортировки -->
+        <!-- Стили для чип-фильтров (.chip в Gilded Noir) -->
         <Style Selector="Button.pillFilter">
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Padding" Value="10,0" />
-            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="CornerRadius" Value="999" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#1E2536" />
-            <Setter Property="Background" Value="#131722" />
-            <Setter Property="Foreground" Value="#8A94A6" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Background" Value="#0A0D14" />
+            <Setter Property="Foreground" Value="{StaticResource BrushBoneText}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style Selector="Button.pillFilter:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1A2030" />
-            <Setter Property="BorderBrush" Value="#2A3750" />
-            <Setter Property="Foreground" Value="#CBD4E1" />
+            <Setter Property="Background" Value="#151A24" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
         </Style>
         <Style Selector="Button.pillFilter.active">
-            <Setter Property="Background" Value="#1F2A40" />
-            <Setter Property="BorderBrush" Value="#384C72" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="#25F0A93B" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
+            <Setter Property="FontWeight" Value="Bold" />
         </Style>
         <Style Selector="Button.pillFilter.active /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1F2A40" />
-            <Setter Property="BorderBrush" Value="#384C72" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="#25F0A93B" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
         </Style>
-
         <!-- Быстрые карточки правого сайдбара -->
         <Style Selector="Button.quickActionCard">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -189,60 +342,73 @@
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="Button.quickActionCard:pointerover Border">
-            <Setter Property="Background" Value="#181E2C" />
-            <Setter Property="BorderBrush" Value="#2B364C" />
+            <Setter Property="Background" Value="#171C26" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
         </Style>
 
         <!-- Стили для пагинации героев -->
         <Style Selector="Button.pillPagination">
-            <Setter Property="Width" Value="34" />
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#1E273A" />
-            <Setter Property="Background" Value="#121624" />
-            <Setter Property="Foreground" Value="#8A94A6" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Background" Value="#0D1118" />
+            <Setter Property="Foreground" Value="{StaticResource BrushDimText}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style Selector="Button.pillPagination:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1A2030" />
-            <Setter Property="BorderBrush" Value="#2A3750" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="#181D28" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushGoldLight}" />
         </Style>
         <Style Selector="Button.pillPagination.active">
-            <Setter Property="Background" Value="#1F2A40" />
-            <Setter Property="BorderBrush" Value="#384C72" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1A1204" />
             <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="Button.pillPagination.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1A1204" />
         </Style>
 
         <!-- Стили для вкладок модальной страницы мода -->
         <Style Selector="Button.pillDetailTab">
-            <Setter Property="Height" Value="36" />
+            <Setter Property="Height" Value="38" />
             <Setter Property="Padding" Value="16,0" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#1C2436" />
-            <Setter Property="Background" Value="#101420" />
-            <Setter Property="Foreground" Value="#858EA0" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLine}" />
+            <Setter Property="Background" Value="#0D1118" />
+            <Setter Property="Foreground" Value="{StaticResource BrushDimText}" />
             <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="Button.pillDetailTab:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#161C2C" />
-            <Setter Property="BorderBrush" Value="#25324A" />
-            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="Background" Value="#181D28" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorderLineGold}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushBoneText}" />
         </Style>
         <Style Selector="Button.pillDetailTab.active">
-            <Setter Property="Background" Value="#1E283C" />
-            <Setter Property="BorderBrush" Value="#3B82F6" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1A1204" />
             <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="Button.pillDetailTab.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BrushGoldGradient}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#1A1204" />
         </Style>
     </Application.Styles>
 </Application>
