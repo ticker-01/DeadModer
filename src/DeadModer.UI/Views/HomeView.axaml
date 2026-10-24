@@ -108,8 +108,8 @@
                         <Ellipse Width="340" Height="340" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,-40" Opacity="0.25">
                             <Ellipse.Fill>
                                 <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
-                                    <GradientStop Offset="0.0" Color="{StaticResource BrushSpectralGreen}" />
-                                    <GradientStop Offset="0.5" Color="{StaticResource BrushGold}" />
+                                    <GradientStop Offset="0.0" Color="#4FE0A8" />
+                                    <GradientStop Offset="0.5" Color="#F0A93B" />
                                     <GradientStop Offset="1.0" Color="Transparent" />
                                 </RadialGradientBrush>
                             </Ellipse.Fill>
